@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Local development settings
 **/appsettings.Development.json
+
+# VS Code workspace settings (launch, tasks, and editor configs)
+.vscode/
