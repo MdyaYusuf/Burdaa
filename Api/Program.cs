@@ -1,19 +1,36 @@
+using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using Api.Core.Middlewares;
 using Api.Core.Security;
 using Api.Data;
+using Api.Features.Roles;
+using Api.Features.Users;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+  options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+});
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 
-var connectionString = builder.Configuration.GetConnectionString("SqlConnection");
-builder.Services.AddDbContext<BaseDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+  options.SuppressModelStateInvalidFilter = true;
+});
+
+builder.Services.AddDataDependencies(builder.Configuration);
+builder.Services.AddUserDependencies();
+builder.Services.AddRoleDependencies();
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
 builder.Services.Configure<TokenOptions>(builder.Configuration.GetSection("TokenOptions"));
 

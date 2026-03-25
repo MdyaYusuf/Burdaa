@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Api.Core.Entities;
+using Api.Features.Roles;
 
 namespace Api.Features.Users;
 
@@ -23,4 +24,8 @@ public class User : Entity<Guid>
   public string? ProfileImageUrl { get; set; }
   public string? Bio { get; set; }
   public bool IsActive { get; set; } = true;
+
+  // Navigation properties
+  public int RoleId { get; set; }
+  public virtual Role Role { get; set; } = default!;
 }
