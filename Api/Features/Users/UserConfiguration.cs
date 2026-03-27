@@ -61,5 +61,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
     builder.HasIndex(u => u.Email)
       .IsUnique();
+
+    builder.HasMany(u => u.Organizations)
+      .WithOne(o => o.Owner)
+      .HasForeignKey(o => o.OwnerId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder.HasMany(u => u.Groups)
+      .WithOne(g => g.Creator)
+      .HasForeignKey(g => g.CreatorId)
+      .OnDelete(DeleteBehavior.ClientCascade);
   }
 }

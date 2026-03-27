@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Api.Core.Entities;
+using Api.Features.Groups;
+using Api.Features.Organizations;
 using Api.Features.Roles;
 
 namespace Api.Features.Users;
@@ -7,8 +9,11 @@ namespace Api.Features.Users;
 public class User : Entity<Guid>
 {
   [SetsRequiredMembers]
-  public User() : base()
+  public User()
   {
+    Organizations = new HashSet<Organization>();
+    Groups = new HashSet<Group>();
+
     Username = default!;
     Email = default!;
     PasswordHash = default!;
@@ -28,4 +33,6 @@ public class User : Entity<Guid>
   // Navigation properties
   public int RoleId { get; set; }
   public virtual Role Role { get; set; } = default!;
+  public virtual ICollection<Organization> Organizations { get; set; }
+  public virtual ICollection<Group> Groups { get; set; }
 }
