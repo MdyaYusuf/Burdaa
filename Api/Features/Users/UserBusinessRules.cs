@@ -1,9 +1,10 @@
 using Api.Core.Exceptions;
 using Api.Core.Security;
+using Api.Features.Roles;
 
 namespace Api.Features.Users;
 
-public class UserBusinessRules(IUserRepository _userRepository)
+public class UserBusinessRules(IUserRepository _userRepository, IRoleRepository _roleRepository)
 {
   public async Task<User> GetUserIfExistAsync(
     Guid id,
@@ -64,6 +65,24 @@ public class UserBusinessRules(IUserRepository _userRepository)
     if (!HashingHelper.VerifyPasswordHash(password, storedHash, storedKey))
     {
       throw new BusinessException("Mevcut şifreniz hatalı.");
+    }
+  }
+
+  public void UserCannotDeactivateSelf(Guid targetUserId, Guid currentUserId, bool isCurrentlyActive, bool newActiveStatus)
+  {
+    if (targetUserId == currentUserId && isCurrentlyActive && !newActiveStatus)
+    {
+      throw new BusinessException("Kendi hesabınızı pasif hale getiremezsiniz. Başka bir yöneticiden yardım isteyin.");
+    }
+  }
+
+  public async Task RoleMustExistAsync(int roleId, CancellationToken cancellationToken)
+  {
+    var exists = await _roleRepository.AnyAsync(r => r.Id == roleId, cancellationToken);
+
+    if (!exists)
+    {
+      throw new NotFoundException("Belirtilen rol sistemde kayıtlı değil.");
     }
   }
 }

@@ -11,8 +11,13 @@ public partial class UserMapper
   public partial User CreateToEntity(RegisterUserRequest request);
   [MapperIgnoreTarget(nameof(User.ProfileImageUrl))]
   public partial void UpdateEntityFromRequest(UpdateUserRequest request, User entity);
+  [MapProperty("Groups.Count", "GroupCount")]
+  [MapProperty("Organizations.Count", "OrganizationCount")]
   [MapProperty("Role.Name", nameof(UserResponseDto.RoleName))]
   public partial UserResponseDto EntityToResponseDto(User entity);
   public partial CreatedUserResponseDto EntityToCreatedResponseDto(User entity);
   public partial List<UserResponseDto> EntityToResponseDtoList(List<User> entities);
+  [MapProperty("Role.Name", "RoleName")]
+  public partial UserPreviewDto EntityToPreviewDto(User entity);
+  public partial List<UserPreviewDto> EntityToPreviewDtoList(List<User> entities);
 }

@@ -4,7 +4,11 @@ using System.Text.Json.Serialization;
 using Api.Core.Middlewares;
 using Api.Core.Security;
 using Api.Data;
+using Api.Features.Groups;
+using Api.Features.Members;
+using Api.Features.Organizations;
 using Api.Features.Roles;
+using Api.Features.Rollcalls;
 using Api.Features.Users;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,6 +34,10 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddDataDependencies(builder.Configuration);
 builder.Services.AddUserDependencies();
 builder.Services.AddRoleDependencies();
+builder.Services.AddGroupDependencies();
+builder.Services.AddMemberDependencies();
+builder.Services.AddOrganizationDependencies();
+builder.Services.AddRollcallDependencies();
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
 builder.Services.Configure<TokenOptions>(builder.Configuration.GetSection("TokenOptions"));

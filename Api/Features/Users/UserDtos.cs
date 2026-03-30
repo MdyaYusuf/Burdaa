@@ -11,5 +11,29 @@ public sealed record UpdateUserRequest(
   IFormFile? ImageFile);
 
 // Responses
-public sealed record CreatedUserResponseDto(Guid Id, string Username);
-public sealed record UserResponseDto(Guid Id, string Username, string Email, string? ProfileImageUrl, string? Bio, string RoleName);
+public sealed record CreatedUserResponseDto
+{
+  public Guid Id { get; init; }
+  public string Username { get; init; } = null!;
+}
+public sealed record UserPreviewDto
+{
+  public Guid Id { get; init; }
+  public string Username { get; init; } = null!;
+  public string? ProfileImageUrl { get; init; }
+  public string RoleName { get; init; } = null!;
+}
+public class UserResponseDto
+{
+  public Guid Id { get; set; }
+  public string Username { get; set; } = null!;
+  public string Email { get; set; } = null!;
+  public string? Bio { get; set; }
+  public string? ProfileImageUrl { get; set; }
+  public bool IsActive { get; set; }
+  public DateTime CreatedDate { get; set; }
+  public int RoleId { get; set; }
+  public string RoleName { get; set; } = null!;
+  public int OrganizationCount { get; set; }
+  public int GroupCount { get; set; }
+}
