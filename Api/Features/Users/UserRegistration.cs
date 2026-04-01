@@ -6,6 +6,7 @@ public static class UserRegistration
   {
     services.AddScoped<IUserRepository, EfUserRepository>();
     services.AddScoped<UserBusinessRules>();
+    services.AddScoped<IUserService, UserService>();
     services.AddSingleton<UserMapper>();
 
     return services;

@@ -6,6 +6,7 @@ public static class OrganizationRegistration
   {
     services.AddScoped<IOrganizationRepository, EfOrganizationRepository>();
     services.AddScoped<OrganizationBusinessRules>();
+    services.AddScoped<IOrganizationService, OrganizationService>();
     services.AddSingleton<OrganizationMapper>();
 
     return services;

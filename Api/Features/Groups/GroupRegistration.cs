@@ -6,6 +6,7 @@ public static class GroupRegistration
   {
     services.AddScoped<IGroupRepository, EfGroupRepository>();
     services.AddScoped<GroupBusinessRules>();
+    services.AddScoped<IGroupService, GroupService>();
     services.AddSingleton<GroupMapper>();
 
     return services;

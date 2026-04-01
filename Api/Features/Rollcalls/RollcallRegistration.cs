@@ -7,6 +7,7 @@ public static class RollcallRegistration
     services.AddScoped<IRollcallRepository, EfRollcallRepository>();
     services.AddScoped<IRollcallEntryRepository, EfRollcallEntryRepository>();
     services.AddScoped<RollcallBusinessRules>();
+    services.AddScoped<IRollcallService, RollcallService>();
     services.AddSingleton<RollcallMapper>();
 
     return services;

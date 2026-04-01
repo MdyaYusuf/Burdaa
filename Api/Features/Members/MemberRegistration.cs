@@ -6,6 +6,7 @@ public static class MemberRegistration
   {
     services.AddScoped<IMemberRepository, EfMemberRepository>();
     services.AddScoped<MemberBusinessRules>();
+    services.AddScoped<IMemberService, MemberService>();
     services.AddSingleton<MemberMapper>();
 
     return services;
