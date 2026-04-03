@@ -1,15 +1,18 @@
 using System.Linq.Expressions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Features.Members;
 
 public class MemberService(
-    IMemberRepository _memberRepository,
-    MemberMapper _mapper,
-    MemberBusinessRules _businessRules,
-    IUnitOfWork _unitOfWork) : IMemberService
+  IMemberRepository _memberRepository,
+  MemberMapper _mapper,
+  MemberBusinessRules _businessRules,
+  IUnitOfWork _unitOfWork,
+  IValidator<CreateMemberRequest> _createValidator,
+  IValidator<UpdateMemberRequest> _updateValidator) : IMemberService
 {
   public async Task<ReturnModel<List<MemberResponseDto>>> GetAllAsync(
     Guid currentUserId,
@@ -125,8 +128,14 @@ public class MemberService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
-    await _businessRules.UserMustHavePermissionToManageMember(request.GroupId, currentUserId, userRole);
+    var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
 
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
+    await _businessRules.UserMustHavePermissionToManageMember(request.GroupId, currentUserId, userRole);
     await _businessRules.MemberExternalIdMustBeUniqueInGroupAsync(request.ExternalId, request.GroupId, cancellationToken: cancellationToken);
 
     Member member = _mapper.CreateToEntity(request);
@@ -151,6 +160,13 @@ public class MemberService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     Member member = await _businessRules.GetMemberIfExistAsync(request.Id, enableTracking: true, cancellationToken: cancellationToken);
 
     await _businessRules.UserMustHavePermissionToManageMember(member.GroupId, currentUserId, userRole);

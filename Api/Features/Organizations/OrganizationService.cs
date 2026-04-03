@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Features.Organizations;
@@ -9,7 +10,9 @@ public class OrganizationService(
   IOrganizationRepository _organizationRepository,
   OrganizationMapper _mapper,
   OrganizationBusinessRules _businessRules,
-  IUnitOfWork _unitOfWork) : IOrganizationService
+  IUnitOfWork _unitOfWork,
+  IValidator<CreateOrganizationRequest> _createValidator,
+  IValidator<UpdateOrganizationRequest> _updateValidator) : IOrganizationService
 {
   public async Task<ReturnModel<List<OrganizationResponseDto>>> GetAllAsync(
     Guid currentUserId,
@@ -124,6 +127,13 @@ public class OrganizationService(
     Guid currentUserId,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     await _businessRules.OrganizationNameMustBeUniqueForUserAsync(request.Name, currentUserId, cancellationToken: cancellationToken);
 
     Organization organization = _mapper.CreateToEntity(request);
@@ -149,6 +159,13 @@ public class OrganizationService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     Organization organization = await _businessRules.GetOrganizationIfExistAsync(request.Id, enableTracking: true, cancellationToken: cancellationToken);
 
     _businessRules.UserMustBeOwnerOrAdmin(organization, currentUserId, userRole);

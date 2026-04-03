@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Api.Core.Middlewares;
 using Api.Core.Security;
 using Api.Data;
+using Api.Features.Authentication;
 using Api.Features.Groups;
 using Api.Features.Members;
 using Api.Features.Organizations;
@@ -38,6 +39,7 @@ builder.Services.AddGroupDependencies();
 builder.Services.AddMemberDependencies();
 builder.Services.AddOrganizationDependencies();
 builder.Services.AddRollcallDependencies();
+builder.Services.AddAuthenticationDependencies();
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
 builder.Services.Configure<TokenOptions>(builder.Configuration.GetSection("TokenOptions"));

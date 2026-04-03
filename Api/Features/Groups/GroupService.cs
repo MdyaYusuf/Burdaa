@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Features.Groups;
@@ -9,7 +10,9 @@ public class GroupService(
   IGroupRepository _groupRepository,
   GroupMapper _mapper,
   GroupBusinessRules _businessRules,
-  IUnitOfWork _unitOfWork) : IGroupService
+  IUnitOfWork _unitOfWork,
+  IValidator<CreateGroupRequest> _createValidator,
+  IValidator<UpdateGroupRequest> _updateValidator) : IGroupService
 {
   public async Task<ReturnModel<List<GroupResponseDto>>> GetAllAsync(
     Guid currentUserId,
@@ -125,6 +128,13 @@ public class GroupService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     await _businessRules.UserMustOwnOrganizationToCreateGroup(request.OrganizationId, currentUserId, userRole);
 
     await _businessRules.GroupNameMustBeUniqueInOrganizationAsync(request.Name, request.OrganizationId, cancellationToken: cancellationToken);
@@ -152,6 +162,13 @@ public class GroupService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     Group group = await _businessRules.GetGroupIfExistAsync(
       request.Id,
       include: q => q.Include(g => g.Organization),

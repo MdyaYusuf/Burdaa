@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Api.Core.Exceptions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Features.Roles;
@@ -10,7 +11,9 @@ public class RoleService(
   IRoleRepository _roleRepository,
   RoleMapper _mapper,
   RoleBusinessRules _businessRules,
-  IUnitOfWork _unitOfWork) : IRoleService
+  IUnitOfWork _unitOfWork,
+  IValidator<CreateRoleRequest> _createValidator,
+  IValidator<UpdateRoleRequest> _updateValidator) : IRoleService
 {
   public async Task<ReturnModel<List<RoleResponseDto>>> GetAllAsync(
     string userRole,
@@ -111,6 +114,13 @@ public class RoleService(
       throw new ForbiddenException("Rol ekleme yetkiniz bulunmamaktadır.");
     }
 
+    var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     await _businessRules.NameMustBeUniqueAsync(request.Name, cancellationToken);
 
     Role role = _mapper.CreateToEntity(request);
@@ -137,6 +147,13 @@ public class RoleService(
     if (userRole != "Admin")
     {
       throw new ForbiddenException("Rol güncelleme yetkiniz bulunmamaktadır.");
+    }
+
+    var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
     }
 
     Role role = await _businessRules.GetRoleIfExistAsync(request.Id, enableTracking: true, cancellationToken: cancellationToken);

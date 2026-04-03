@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Features.Rollcalls;
@@ -9,7 +10,9 @@ public class RollcallService(
   IRollcallRepository _rollcallRepository,
   RollcallMapper _mapper,
   RollcallBusinessRules _businessRules,
-  IUnitOfWork _unitOfWork) : IRollcallService
+  IUnitOfWork _unitOfWork,
+  IValidator<CreateRollcallRequest> _createValidator,
+  IValidator<UpdateRollcallRequest> _updateValidator) : IRollcallService
 {
   public async Task<ReturnModel<List<RollcallResponseDto>>> GetAllAsync(
     Guid currentUserId,
@@ -125,6 +128,13 @@ public class RollcallService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     await _businessRules.UserMustHavePermissionToManageRollcall(request.GroupId, currentUserId, userRole);
     _businessRules.RollcallDateCannotBeInFuture(request.Date);
     await _businessRules.RollcallTitleMustBeUniqueForGroupOnDateAsync(request.Title, request.GroupId, request.Date, cancellationToken: cancellationToken);
@@ -154,6 +164,13 @@ public class RollcallService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     Rollcall rollcall = await _businessRules.GetRollcallIfExistAsync(
       request.Id,
       include: q => q.Include(r => r.Entries).Include(r => r.Group).ThenInclude(g => g.Organization),

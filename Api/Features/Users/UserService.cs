@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
 using Api.Core.Security;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Features.Users;
@@ -10,7 +11,9 @@ public class UserService(
   IUserRepository _userRepository,
   UserMapper _mapper,
   UserBusinessRules _businessRules,
-  IUnitOfWork _unitOfWork) : IUserService
+  IUnitOfWork _unitOfWork,
+  IValidator<UpdateUserRequest> _updateValidator,
+  IValidator<ChangePasswordRequest> _changePasswordValidator) : IUserService
 {
   public async Task<ReturnModel<List<UserResponseDto>>> GetAllAsync(
     Guid currentUserId,
@@ -123,6 +126,13 @@ public class UserService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     User user = await _businessRules.GetUserIfExistAsync(currentUserId, enableTracking: true, cancellationToken: cancellationToken);
 
     await _businessRules.UsernameMustBeUniqueAsync(request.Username, user.Id, cancellationToken);
@@ -146,6 +156,13 @@ public class UserService(
     Guid currentUserId,
     CancellationToken cancellationToken = default)
   {
+    var validationResult = await _changePasswordValidator.ValidateAsync(request, cancellationToken);
+
+    if (!validationResult.IsValid)
+    {
+      throw new ValidationException(validationResult.Errors);
+    }
+
     User user = await _businessRules.GetUserIfExistAsync(currentUserId, enableTracking: true, cancellationToken: cancellationToken);
 
     _businessRules.PasswordMustMatch(request.CurrentPassword, user.PasswordHash, user.PasswordKey);

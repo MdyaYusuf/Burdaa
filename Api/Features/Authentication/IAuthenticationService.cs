@@ -1,0 +1,23 @@
+using Api.Core.Responses;
+using Api.Features.Users;
+
+namespace Api.Features.Authentication;
+
+public interface IAuthenticationService
+{
+  Task<ReturnModel<TokenResponseDto>> LoginAsync(
+    LoginRequest request,
+    CancellationToken cancellationToken);
+
+  Task<ReturnModel<CreatedUserResponseDto>> RegisterAsync(
+    RegisterUserRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(
+    CancellationToken cancellationToken,
+    string? refreshToken = null);
+
+  Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(
+    CancellationToken cancellationToken,
+    string? refreshToken = null);
+}

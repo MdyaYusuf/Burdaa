@@ -24,7 +24,7 @@ where TId : notnull
   Task<TEntity?> GetByIdAsync(
     TId id,
     Func<IQueryable<TEntity>, IQueryable<TEntity>>? include = null,
-    bool enableTracking = true,
+    bool enableTracking = false,
     CancellationToken cancellationToken = default);
 
   Task<bool> AnyAsync(
