@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Api.Core.Helpers;
 using Api.Core.Repositories;
 using Api.Core.Responses;
 using FluentValidation;
@@ -139,6 +140,15 @@ public class OrganizationService(
     Organization organization = _mapper.CreateToEntity(request);
     organization.OwnerId = currentUserId;
 
+    if (request.LogoFile != null)
+    {
+      organization.LogoUrl = await FileHelper.SaveImageToDisk(
+        request.LogoFile,
+        "logos",
+        request.Name,
+        cancellationToken);
+    }
+
     await _organizationRepository.AddAsync(organization, cancellationToken);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -170,6 +180,13 @@ public class OrganizationService(
 
     _businessRules.UserMustBeOwnerOrAdmin(organization, currentUserId, userRole);
     await _businessRules.OrganizationNameMustBeUniqueForUserAsync(request.Name, organization.OwnerId, organization.Id, cancellationToken);
+
+    organization.LogoUrl = await FileHelper.ReplaceImageOnDisk(
+      request.LogoFile,
+      organization.LogoUrl,
+      "logos",
+      request.Name,
+      cancellationToken);
 
     _mapper.UpdateEntityFromRequest(request, organization);
 

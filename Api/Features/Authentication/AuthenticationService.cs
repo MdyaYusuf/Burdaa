@@ -93,9 +93,9 @@ public class AuthenticationService(
     };
   }
 
-  public async Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(CancellationToken cancellationToken, string? refreshToken = null)
+  public async Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(CancellationToken cancellationToken)
   {
-    string? token = refreshToken ?? _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
+    string? token = _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
 
     User? user = await _userRepository.GetAsync(
       predicate: u => u.RefreshToken == token,
@@ -124,9 +124,9 @@ public class AuthenticationService(
     };
   }
 
-  public async Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(CancellationToken cancellationToken, string? refreshToken = null)
+  public async Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(CancellationToken cancellationToken)
   {
-    string? token = refreshToken ?? _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
+    string? token = _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
 
     User? user = await _userRepository.GetAsync(u => u.RefreshToken == token);
     _authBusinessRules.RefreshTokenUserMustExist(user);

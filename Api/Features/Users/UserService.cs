@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Api.Core.Helpers;
 using Api.Core.Repositories;
 using Api.Core.Responses;
 using Api.Core.Security;
@@ -137,6 +138,13 @@ public class UserService(
 
     await _businessRules.UsernameMustBeUniqueAsync(request.Username, user.Id, cancellationToken);
     await _businessRules.EmailMustBeUniqueAsync(request.Email, user.Id, cancellationToken);
+
+    user.ProfileImageUrl = await FileHelper.ReplaceImageOnDisk(
+      request.ImageFile,
+      user.ProfileImageUrl,
+      "profiles",
+      request.Username,
+      cancellationToken);
 
     _mapper.UpdateEntityFromRequest(request, user);
 

@@ -4,13 +4,13 @@ namespace Api.Features.Organizations;
 public sealed record CreateOrganizationRequest(
   string Name,
   string? Address,
-  string? LogoUrl);
+  IFormFile? LogoFile);
 public class UpdateOrganizationRequest
 {
   public Guid Id { get; set; }
   public string Name { get; set; } = null!;
   public string? Address { get; set; }
-  public string? LogoUrl { get; set; }
+  public IFormFile? LogoFile { get; set; }
 }
 
 // Responses
