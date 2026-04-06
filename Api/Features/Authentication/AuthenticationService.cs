@@ -21,8 +21,7 @@ public class AuthenticationService(
   IUnitOfWork _unitOfWork,
   IValidator<RegisterUserRequest> _registerValidator,
   IValidator<LoginRequest> _loginValidator,
-  IOptions<TokenOptions> _tokenOptions,
-  IHttpContextAccessor _httpContextAccessor) : IAuthenticationService
+  IOptions<TokenOptions> _tokenOptions) : IAuthenticationService
 {
   private readonly TokenOptions _options = _tokenOptions.Value;
 
@@ -41,15 +40,13 @@ public class AuthenticationService(
 
     _authBusinessRules.UserCredentialsMustMatch(user, request.Password);
 
-    TokenResponseDto tokenResponse = CreateToken(user!);
-
     user!.RefreshToken = GenerateRefreshToken();
     user.RefreshTokenExpiration = DateTime.Now.AddDays(_options.RefreshTokenExpiration);
 
-    SetRefreshTokenCookie(user.RefreshToken, user.RefreshTokenExpiration.Value);
-
     _userRepository.Update(user);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+    TokenResponseDto tokenResponse = CreateToken(user!, user.RefreshToken);
 
     return new ReturnModel<TokenResponseDto>()
     {
@@ -93,27 +90,26 @@ public class AuthenticationService(
     };
   }
 
-  public async Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(CancellationToken cancellationToken)
+  public async Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
   {
-    string? token = _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
-
     User? user = await _userRepository.GetAsync(
-      predicate: u => u.RefreshToken == token,
+      predicate: u => u.RefreshToken == refreshToken,
       include: query => query.Include(u => u.Role).Include(u => u.Organizations).Include(u => u.Groups));
 
     _authBusinessRules.RefreshTokenMustBeValid(user);
 
-    TokenResponseDto tokenResponse = CreateToken(user!);
+    string currentRefreshToken = user!.RefreshToken!;
 
     if (user!.RefreshTokenExpiration <= DateTime.Now.AddDays(1))
     {
-      user.RefreshToken = GenerateRefreshToken();
+      currentRefreshToken = GenerateRefreshToken();
+      user.RefreshToken = currentRefreshToken;
       user.RefreshTokenExpiration = DateTime.Now.AddDays(_options.RefreshTokenExpiration);
     }
 
-    SetRefreshTokenCookie(user.RefreshToken!, user.RefreshTokenExpiration!.Value);
-
     await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+    TokenResponseDto tokenResponse = CreateToken(user!, currentRefreshToken);
 
     return new ReturnModel<TokenResponseDto>()
     {
@@ -124,17 +120,13 @@ public class AuthenticationService(
     };
   }
 
-  public async Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(CancellationToken cancellationToken)
+  public async Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
   {
-    string? token = _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
-
-    User? user = await _userRepository.GetAsync(u => u.RefreshToken == token);
+    User? user = await _userRepository.GetAsync(u => u.RefreshToken == refreshToken);
     _authBusinessRules.RefreshTokenUserMustExist(user);
 
     user!.RefreshToken = null;
     user.RefreshTokenExpiration = null;
-
-    DeleteRefreshTokenCookie();
 
     _userRepository.Update(user);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -147,43 +139,12 @@ public class AuthenticationService(
     };
   }
 
-  private void SetRefreshTokenCookie(string token, DateTime expires)
-  {
-    bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-
-    CookieOptions cookieOptions = new()
-    {
-      HttpOnly = true,
-      Secure = !isDevelopment,
-      SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.Strict,
-      Expires = expires,
-      Path = "/"
-    };
-
-    _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", token, cookieOptions);
-  }
-
-  private void DeleteRefreshTokenCookie()
-  {
-    bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-
-    CookieOptions cookieOptions = new()
-    {
-      HttpOnly = true,
-      Secure = !isDevelopment,
-      SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.Strict,
-      Path = "/"
-    };
-
-    _httpContextAccessor.HttpContext?.Response.Cookies.Delete("refreshToken", cookieOptions);
-  }
-
   private string GenerateRefreshToken()
   {
     return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
   }
 
-  private TokenResponseDto CreateToken(User user)
+  private TokenResponseDto CreateToken(User user, string refreshToken)
   {
     List<Claim> claims = [
       new(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -210,6 +171,7 @@ public class AuthenticationService(
     return new TokenResponseDto(
       accessToken,
       expiration,
+      refreshToken,
       userDto);
   }
 }

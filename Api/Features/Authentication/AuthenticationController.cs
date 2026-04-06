@@ -29,17 +29,17 @@ public class AuthenticationController(IAuthenticationService _authService) : Cus
   }
 
   [HttpPost("refresh-token")]
-  public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
+  public async Task<IActionResult> RefreshToken([FromBody] string refreshToken, CancellationToken cancellationToken)
   {
-    var result = await _authService.RefreshTokenAsync(cancellationToken);
+    var result = await _authService.RefreshTokenAsync(refreshToken, cancellationToken);
 
     return CreateActionResult(result);
   }
 
   [HttpPost("revoke-token")]
-  public async Task<IActionResult> RevokeToken(CancellationToken cancellationToken)
+  public async Task<IActionResult> RevokeToken([FromBody] string refreshToken, CancellationToken cancellationToken)
   {
-    var result = await _authService.RevokeRefreshTokenAsync(cancellationToken);
+    var result = await _authService.RevokeRefreshTokenAsync(refreshToken, cancellationToken);
 
     return CreateActionResult(result);
   }

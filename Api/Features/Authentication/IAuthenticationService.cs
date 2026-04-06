@@ -13,7 +13,7 @@ public interface IAuthenticationService
     RegisterUserRequest request,
     CancellationToken cancellationToken = default);
 
-  Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(CancellationToken cancellationToken);
+  Task<ReturnModel<TokenResponseDto>> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken);
 
-  Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(CancellationToken cancellationToken);
+  Task<ReturnModel<NoData>> RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken);
 }

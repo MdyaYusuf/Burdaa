@@ -13,8 +13,9 @@ public class CreateOrganizationRequestValidator : AbstractValidator<CreateOrgani
     RuleFor(o => o.Address)
       .MaximumLength(500).WithMessage("Adres en fazla 500 karakter olabilir.");
 
-    RuleFor(o => o.LogoUrl)
-      .MaximumLength(500).WithMessage("Logo URL'si en fazla 500 karakter olabilir.");
+    RuleFor(o => o.LogoFile)
+      .Must(file => file == null || file.Length < 2 * 1024 * 1024)
+      .WithMessage("Logo dosyası 2MB'dan büyük olamaz.");
   }
 }
 
@@ -32,7 +33,8 @@ public class UpdateOrganizationRequestValidator : AbstractValidator<UpdateOrgani
     RuleFor(o => o.Address)
       .MaximumLength(500).WithMessage("Adres en fazla 500 karakter olabilir.");
 
-    RuleFor(o => o.LogoUrl)
-      .MaximumLength(500).WithMessage("Logo URL'si en fazla 500 karakter olabilir.");
+    RuleFor(o => o.LogoFile)
+      .Must(file => file == null || file.Length < 2 * 1024 * 1024)
+      .WithMessage("Logo dosyası 2MB'dan büyük olamaz.");
   }
 }

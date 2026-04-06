@@ -7,7 +7,7 @@ public static class DataRegistration
 {
   public static IServiceCollection AddDataDependencies(this IServiceCollection services, IConfiguration configuration)
   {
-    services.AddDbContext<BaseDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("SqlConnection")));
+    services.AddDbContext<BaseDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("PostgreConnection")));
 
     services.AddScoped<IUnitOfWork, UnitOfWork>();
 
