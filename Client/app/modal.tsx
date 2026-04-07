@@ -1,17 +1,27 @@
 import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+// Import your Executive colors
+import { Colors } from '../src/constants/Colors';
+import { useColorScheme } from 'react-native';
 
 export default function ModalScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/modal.tsx" />
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
 
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.title, { color: theme.primary, fontFamily: 'Manrope-Bold' }]}>
+        Info Modal
+      </Text>
+      
+      <View style={[styles.separator, { backgroundColor: theme.tonalLayerLow }]} />
+
+      <Text style={{ color: theme.subText, textAlign: 'center', paddingHorizontal: 40 }}>
+        This is a placeholder for your Burdaa info or settings. 
+        It is now clean and boilerplate-free.
+      </Text>
+
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
     </View>
   );
@@ -24,11 +34,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 24,
+    marginBottom: 8,
   },
   separator: {
-    marginVertical: 30,
+    marginVertical: 20,
     height: 1,
     width: '80%',
   },

@@ -1,19 +1,45 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+const primaryNavy = '#04172c';
+const primaryContainer = '#1a2c42';
+const white = '#ffffff';
+const black = '#000000';
 
-export default {
+const surface = '#f8f9fc';
+const onSurface = '#191c1e';
+const onSurfaceVariant = '#44474d';
+
+export const Colors = {
   light: {
-    text: '#000',
-    background: '#fff',
-    tint: tintColorLight,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorLight,
+    text: onSurface,
+    background: surface,
+    subText: onSurfaceVariant,
+    tint: primaryNavy,
+    iconDefault: '#ccc',
+    tabIconSelected: primaryNavy,
+    cardBase: '#ffffff',
+    tonalLayerLow: '#f2f4f6',
+    primary: primaryNavy,
+    primaryContainer: primaryContainer,
+    onPrimary: white,
+    present: '#d3e4ff',
+    late: '#ffddb2',
+    absent: '#ffdad6',
+    onStatusText: primaryNavy,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
+    text: white,
+    background: black,
+    subText: '#ccc',
+    tint: white,
+    iconDefault: '#999',
+    tabIconSelected: white,
+    cardBase: '#1a1c1e',
+    tonalLayerLow: '#252a2e',
+    primary: '#d0e4ff',
+    primaryContainer: primaryContainer,
+    onPrimary: black,
+    present: '#d3e4ff',
+    late: '#ffddb2',
+    absent: '#ffdad6',
+    onStatusText: primaryNavy,
   },
 };

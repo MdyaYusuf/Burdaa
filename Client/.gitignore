@@ -42,3 +42,11 @@ yarn-error.*
 
 # environment variables
 .env
+
+# Project specific
+app-example/
+
+# Expo Generated
+expo-env.d.ts
+.expo/
+dist/
