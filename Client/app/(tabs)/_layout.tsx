@@ -2,9 +2,7 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-
-// Import your custom Executive Ledger colors as a named import
-import { Colors } from '../../src/constants/Colors';
+import { Colors } from '../../src/core/constants/Theme';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -15,8 +13,6 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  
-  // Use your theme colors defaulting to light
   const theme = Colors[colorScheme ?? 'light'];
 
   return (

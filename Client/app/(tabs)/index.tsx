@@ -1,5 +1,5 @@
-import { LandingScreen } from '../../src/screens/auth/LandingScreen';
+import { LandingScreen } from '../../src/features/auth/screens/LandingScreen';
 
-export default function Page() {
+export default function TabIndex() {
   return <LandingScreen />;
 }

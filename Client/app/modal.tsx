@@ -1,8 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-
-// Import your Executive colors
-import { Colors } from '../src/constants/Colors';
+import { Colors, Spacing } from '../src/core/constants/Theme';
 import { useColorScheme } from 'react-native';
 
 export default function ModalScreen() {
@@ -17,7 +15,7 @@ export default function ModalScreen() {
       
       <View style={[styles.separator, { backgroundColor: theme.tonalLayerLow }]} />
 
-      <Text style={{ color: theme.subText, textAlign: 'center', paddingHorizontal: 40 }}>
+      <Text style={{ color: theme.subText, textAlign: 'center', paddingHorizontal: Spacing.xl }}>
         This is a placeholder for your Burdaa info or settings. 
         It is now clean and boilerplate-free.
       </Text>

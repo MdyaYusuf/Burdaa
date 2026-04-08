@@ -3,4 +3,5 @@ export interface ReturnModel<T> {
   success: boolean;
   message: string;
   statusCode: number;
+  errors?: string[];
 }

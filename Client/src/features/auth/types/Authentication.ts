@@ -4,6 +4,9 @@ export interface UserResponseDto {
   email: string;
   bio?: string;
   profileImageUrl?: string;
+  isActive: boolean;
+  createdDate: string;
+  roleId: number;
   roleName: string;
   organizationCount: number;
   groupCount: number;
@@ -14,4 +17,15 @@ export interface TokenResponseDto {
   expiration: string;
   refreshToken: string;
   user: UserResponseDto;
+}
+
+export interface LoginRequest {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterUserRequest {
+  username: string;
+  email: string;
+  password?: string;
 }
