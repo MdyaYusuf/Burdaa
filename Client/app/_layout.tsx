@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import { setCredentials, logout } from '../src/features/auth/store/authSlice';
+import { useAppDispatch } from '../src/core/hooks/useRedux';
+import { setCredentials, logoutUser } from '../src/features/auth/store/authSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -18,7 +19,7 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: 'index', 
 };
 
 // Prevent the splash screen from hiding automatically
@@ -52,7 +53,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [isReady, setIsReady] = useState(false);
   
   // Define active theme from Design Palette
@@ -68,7 +69,7 @@ function RootLayoutNav() {
         if (token && savedUser) {
           dispatch(setCredentials(JSON.parse(savedUser)));
         } else {
-          dispatch(logout());
+          dispatch(logoutUser());
         }
       } catch (e) {
         console.warn("Session rehydration failed", e);

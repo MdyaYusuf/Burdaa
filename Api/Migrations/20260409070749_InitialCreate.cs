@@ -53,7 +53,7 @@ namespace Api.Migrations
                         column: x => x.RoleId,
                         principalTable: "Roles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -76,7 +76,7 @@ namespace Api.Migrations
                         column: x => x.OwnerId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -113,9 +113,9 @@ namespace Api.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FirstName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    LastName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    ExternalId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ExternalId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     GroupId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -138,7 +138,7 @@ namespace Api.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     GroupId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -162,8 +162,8 @@ namespace Api.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     RollcallId = table.Column<Guid>(type: "uuid", nullable: false),
                     MemberId = table.Column<Guid>(type: "uuid", nullable: false),
-                    IsPresent = table.Column<bool>(type: "boolean", nullable: false),
-                    Note = table.Column<string>(type: "text", nullable: true),
+                    IsPresent = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    Note = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -189,14 +189,14 @@ namespace Api.Migrations
                 column: "CreatorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Groups_Name",
+                table: "Groups",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Groups_OrganizationId",
                 table: "Groups",
                 column: "OrganizationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Members_ExternalId",
-                table: "Members",
-                column: "ExternalId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Members_GroupId",
@@ -225,9 +225,15 @@ namespace Api.Migrations
                 column: "MemberId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RollcallEntries_RollcallId",
+                name: "IX_RollcallEntries_RollcallId_MemberId",
                 table: "RollcallEntries",
-                column: "RollcallId");
+                columns: new[] { "RollcallId", "MemberId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Rollcalls_Date",
+                table: "Rollcalls",
+                column: "Date");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rollcalls_GroupId",

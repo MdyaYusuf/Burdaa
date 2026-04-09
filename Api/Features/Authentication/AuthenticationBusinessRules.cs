@@ -21,7 +21,7 @@ public class AuthenticationBusinessRules
 
   public void RefreshTokenMustBeValid(User? user)
   {
-    if (user == null || user.RefreshTokenExpiration < DateTime.Now)
+    if (user == null || user.RefreshTokenExpiration < DateTime.UtcNow)
     {
       throw new AuthorizationException("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
     }

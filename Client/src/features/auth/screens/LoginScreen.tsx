@@ -16,49 +16,37 @@ import { Colors, Spacing, Radius } from '../../../core/constants/Theme';
 import { ExecutiveButton } from '../../../core/components/ExecutiveButton';
 import { useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../../core/hooks/useRedux';
-import { registerUser } from '../store/authSlice';
-import { RegisterUserRequest } from '../types/Authentication';
+import { loginUser } from '../store/authSlice';
 
 const theme = Colors.light;
 
-export const RegisterScreen = () => {
+export const LoginScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const { isLoading } = useAppSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
   });
 
-  const handleRegister = async () => {
-  // Basic UI Validation
-  if (!formData.username || !formData.email || !formData.password) {
-    return;
-  }
+  const handleLogin = async () => {
+    
+    if (!formData.email || !formData.password){
 
-  const request: RegisterUserRequest = {
-    username: formData.username,
-    email: formData.email,
-    password: formData.password,
+      return;
+    }
+    
+    const result = await dispatch(loginUser({ 
+      email: formData.email, 
+      password: formData.password 
+    }));
+
+    if (loginUser.fulfilled.match(result)) {
+      router.replace('/(tabs)');
+    }
   };
-
-  // Dispatch the thunk
-  const result = await dispatch(registerUser(request));
-
-  // Handle Success
-  if (registerUser.fulfilled.match(result)) {
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-    });
-
-    router.replace('/(tabs)');
-  }
-};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,34 +54,19 @@ export const RegisterScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          
-          {/* Header Section: Editorial Voice */}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           <View style={styles.header}>
-            <Text style={styles.heroTitle}>Create Account</Text>
+            <Text style={styles.heroTitle}>Welcome Back</Text>
             <Text style={styles.subText}>
-              Join the next generation of attendance tracking.
+              Please enter your credentials to continue your executive session.
             </Text>
           </View>
 
           <View style={styles.form}>
-            
-            {/* Username Field */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Username</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons name="account-outline" size={22} color={theme.subText} style={styles.inputIcon} />
-                <TextInput 
-                  style={styles.input}
-                  placeholder="Choose a unique username"
-                  placeholderTextColor={theme.subText}
-                  autoCorrect={false}
-                  onChangeText={(val) => setFormData({...formData, username: val})}
-                />
-              </View>
-            </View>
-
-            {/* Email Field */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email Address</Text>
               <View style={styles.inputWrapper}>
@@ -110,14 +83,16 @@ export const RegisterScreen = () => {
               </View>
             </View>
 
-            {/* Password Field */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Password</Text>
+                <Pressable><Text style={styles.forgotText}>Forgot Password?</Text></Pressable>
+              </View>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="lock-outline" size={22} color={theme.subText} style={styles.inputIcon} />
                 <TextInput 
                   style={styles.input}
-                  placeholder="Min. 8 characters"
+                  placeholder="Enter your password"
                   placeholderTextColor={theme.subText}
                   secureTextEntry={!showPassword}
                   onChangeText={(val) => setFormData({...formData, password: val})}
@@ -132,23 +107,21 @@ export const RegisterScreen = () => {
               </View>
             </View>
 
-            {/* Call to Action Section */}
             <View style={styles.ctaContainer}>
               <ExecutiveButton 
-                title={isLoading ? "" : "Register"} 
-                onPress={handleRegister}
+                title={isLoading ? "" : "Login"} 
+                onPress={handleLogin}
                 disabled={isLoading}
               >
                 {isLoading && <ActivityIndicator color="#FFFFFF" />}
               </ExecutiveButton>
             </View>
 
-            <Pressable onPress={() => router.push('/(auth)/login')} style={styles.footerLink}>
+            <Pressable onPress={() => router.push('/(auth)/register')} style={styles.footerLink}>
               <Text style={styles.footerText}>
-                Already have an account? <Text style={styles.footerAction}>Login</Text>
+                Don't have an account? <Text style={styles.footerAction}>Create Account</Text>
               </Text>
             </Pressable>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -158,7 +131,10 @@ export const RegisterScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  scrollContent: { padding: Spacing.lg, paddingTop: 60 + Spacing.xl, },
+  scrollContent: { 
+    padding: Spacing.lg,
+    paddingTop: 60 + Spacing.xl,
+  },
   header: { marginBottom: Spacing.xl },
   heroTitle: {
     fontFamily: 'Manrope-ExtraBold',
@@ -176,13 +152,19 @@ const styles = StyleSheet.create({
   },
   form: { marginTop: Spacing.md },
   inputGroup: { marginBottom: Spacing.lg },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
   label: {
     fontFamily: 'Inter-Bold',
     fontSize: 14,
     color: theme.primary,
     opacity: 0.8,
-    marginBottom: Spacing.sm,
     marginLeft: 4,
+  },
+  forgotText: { 
+    fontSize: 13, 
+    fontFamily: 'Inter-Bold', 
+    color: theme.primary,
+    marginRight: 4 
   },
   inputWrapper: {
     flexDirection: 'row',

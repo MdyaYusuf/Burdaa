@@ -8,11 +8,33 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
   public void Configure(EntityTypeBuilder<Group> builder)
   {
     builder.ToTable("Groups");
+
     builder.HasKey(g => g.Id);
 
-    builder.Property(g => g.Name).HasColumnName("Name").HasMaxLength(150).IsRequired();
-    builder.Property(g => g.Description).HasColumnName("Description").HasMaxLength(1000);
-    builder.Property(g => g.IsActive).HasDefaultValue(true);
+    builder.Property(g => g.Id)
+      .HasColumnName("Id")
+      .IsRequired();
+
+    builder.Property(g => g.CreatedDate)
+      .HasColumnName("CreatedDate")
+      .IsRequired();
+
+    builder.Property(g => g.UpdatedDate)
+      .HasColumnName("UpdatedDate")
+      .IsRequired(false);
+
+    builder.Property(g => g.Name)
+      .HasColumnName("Name")
+      .HasMaxLength(150)
+      .IsRequired();
+
+    builder.Property(g => g.Description)
+      .HasColumnName("Description")
+      .HasMaxLength(1000)
+      .IsRequired(false);
+
+    builder.Property(g => g.IsActive)
+      .HasDefaultValue(true);
 
     builder.HasOne(g => g.Organization)
       .WithMany(o => o.Groups)
@@ -20,8 +42,10 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
       .OnDelete(DeleteBehavior.Cascade);
 
     builder.HasOne(g => g.Creator)
-      .WithMany()
+      .WithMany(u => u.Groups)
       .HasForeignKey(g => g.CreatorId)
       .OnDelete(DeleteBehavior.ClientCascade);
+
+    builder.HasIndex(g => g.Name);
   }
 }

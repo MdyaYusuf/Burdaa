@@ -4,7 +4,7 @@ public abstract class Entity<TId> where TId : notnull
 {
   protected Entity()
   {
-    CreatedDate = DateTime.Now;
+    CreatedDate = DateTime.UtcNow;
   }
 
   protected Entity(TId id) : this()

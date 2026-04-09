@@ -1,9 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { apiClient } from '../../../core/api/apiClient';
-import { UserResponseDto, RegisterUserRequest, TokenResponseDto } from '../types/Authentication';
+import { 
+  UserResponseDto, 
+  RegisterUserRequest, 
+  LoginRequest, 
+  TokenResponseDto 
+} from '../types/Authentication';
 import * as SecureStore from 'expo-secure-store';
 
-// The Thunk handles the API call and storage automatically
+// Thunk: Register
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (data: RegisterUserRequest, { rejectWithValue }) => {
@@ -14,10 +19,46 @@ export const registerUser = createAsyncThunk(
 
     if (result.success && result.data) {
       await SecureStore.setItemAsync('accessToken', result.data.accessToken);
+      await SecureStore.setItemAsync('refreshToken', result.data.refreshToken);
       await SecureStore.setItemAsync('user', JSON.stringify(result.data.user));
-      return result.data.user; // This goes to fulfilled
+
+      return result.data.user;
     }
-    return rejectWithValue(result.message || 'Registration failed');
+
+    return rejectWithValue(result.message || 'Kayıt başarısız');
+  }
+);
+
+// Thunk: Login
+export const loginUser = createAsyncThunk(
+  'auth/login',
+  async (data: LoginRequest, { rejectWithValue }) => {
+    const result = await apiClient.request<TokenResponseDto>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    if (result.success && result.data) {
+      await SecureStore.setItemAsync('accessToken', result.data.accessToken);
+      await SecureStore.setItemAsync('refreshToken', result.data.refreshToken);
+      await SecureStore.setItemAsync('user', JSON.stringify(result.data.user));
+
+      return result.data.user;
+    }
+
+    return rejectWithValue(result.message || 'Giriş başarısız');
+  }
+);
+
+// Thunk: Logout
+export const logoutUser = createAsyncThunk(
+  'auth/logout',
+  async () => {
+    await SecureStore.deleteItemAsync('accessToken');
+    await SecureStore.deleteItemAsync('refreshToken');
+    await SecureStore.deleteItemAsync('user');
+
+    return true;
   }
 );
 
@@ -39,23 +80,17 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    // Used for auto login and hydration when the app starts
     setCredentials: (state, action: PayloadAction<UserResponseDto>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.error = null;
-    },
-    logout: (state) => {
-      state.user = null;
-      state.isAuthenticated = false;
       state.error = null;
     }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(registerUser.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
+      // Register
+      .addCase(registerUser.pending, (state) => { state.isLoading = true; state.error = null; })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
@@ -64,9 +99,26 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // Login
+      .addCase(loginUser.pending, (state) => { state.isLoading = true; state.error = null; })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Logout
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
       });
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials } = authSlice.actions;
 export default authSlice.reducer;

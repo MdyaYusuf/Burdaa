@@ -65,7 +65,7 @@ public class RollcallBusinessRules(
 
   public void RollcallDateCannotBeInFuture(DateTime date)
   {
-    if (date > DateTime.Now.AddDays(1))
+    if (date > DateTime.UtcNow.AddDays(1))
     {
       throw new BusinessException("Gelecek bir tarih için yoklama girişi yapılamaz.");
     }

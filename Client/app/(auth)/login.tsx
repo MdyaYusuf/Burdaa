@@ -1,9 +1,5 @@
-import { View, Text } from 'react-native';
+import { LoginScreen } from '../../src/features/auth/screens/LoginScreen';
 
 export default function LoginRoute() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Login Screen Placeholder</Text>
-    </View>
-  );
+  return <LoginScreen />;
 }
