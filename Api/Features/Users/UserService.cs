@@ -28,23 +28,10 @@ public class UserService(
   {
     _businessRules.UserMustBeOwnerOrAdmin(Guid.Empty, currentUserId, userRole);
 
-    IQueryable<User> query = _userRepository.Query(enableTracking, withDeleted);
+    List<User> users = await _userRepository.GetAllAsync(
+      include: query => query.Include(u => u.Role).Include(u => u.Organizations).Include(u => u.Groups),
+      cancellationToken: cancellationToken);
 
-    if (filter != null)
-    {
-      query = query.Where(filter);
-    }
-
-    query = include != null
-      ? include(query)
-      : query.Include(u => u.Role).Include(u => u.Organizations).Include(u => u.Groups);
-
-    if (orderBy != null)
-    {
-      query = orderBy(query);
-    }
-
-    List<User> users = await query.ToListAsync<User>(cancellationToken);
     List<UserResponseDto> response = _mapper.EntityToResponseDtoList(users);
 
     return new ReturnModel<List<UserResponseDto>>()

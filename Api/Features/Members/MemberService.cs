@@ -24,28 +24,16 @@ public class MemberService(
     bool withDeleted = false,
     CancellationToken cancellationToken = default)
   {
-    IQueryable<Member> query = _memberRepository.Query(enableTracking, withDeleted);
+    var members = await _memberRepository.GetAllAsync(
+      filter: userRole == "Admin"
+        ? filter
+        : x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId,
+      include: include ?? (q => q.Include(m => m.Group)),
+      orderBy: orderBy,
+      enableTracking: enableTracking,
+      withDeleted: withDeleted,
+      cancellationToken: cancellationToken);
 
-    if (userRole != "Admin")
-    {
-      query = query.Where(x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId);
-    }
-
-    if (filter != null)
-    {
-      query = query.Where(filter);
-    }
-
-    query = include != null
-      ? include(query)
-      : query.Include(m => m.Group);
-
-    if (orderBy != null)
-    {
-      query = orderBy(query);
-    }
-
-    List<Member> members = await query.ToListAsync(cancellationToken);
     List<MemberResponseDto> response = _mapper.EntityToResponseDtoList(members);
 
     return new ReturnModel<List<MemberResponseDto>>()

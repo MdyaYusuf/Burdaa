@@ -25,28 +25,14 @@ public class OrganizationService(
     bool withDeleted = false,
     CancellationToken cancellationToken = default)
   {
-    IQueryable<Organization> query = _organizationRepository.Query(enableTracking, withDeleted);
+    var organizations = await _organizationRepository.GetAllAsync(
+      filter: userRole == "Admin" ? filter : x => x.OwnerId == currentUserId,
+      include: include ?? (q => q.Include(o => o.Owner).Include(o => o.Groups)),
+      orderBy: orderBy,
+      enableTracking: enableTracking,
+      withDeleted: withDeleted,
+      cancellationToken: cancellationToken);
 
-    if (userRole != "Admin")
-    {
-      query = query.Where(x => x.OwnerId == currentUserId);
-    }
-
-    if (filter != null)
-    {
-      query = query.Where(filter);
-    }
-
-    query = include != null
-      ? include(query)
-      : query.Include(o => o.Owner).Include(o => o.Groups);
-
-    if (orderBy != null)
-    {
-      query = orderBy(query);
-    }
-
-    List<Organization> organizations = await query.ToListAsync(cancellationToken);
     List<OrganizationResponseDto> response = _mapper.EntityToResponseDtoList(organizations);
 
     return new ReturnModel<List<OrganizationResponseDto>>()

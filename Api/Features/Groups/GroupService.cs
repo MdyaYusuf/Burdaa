@@ -24,28 +24,16 @@ public class GroupService(
     bool withDeleted = false,
     CancellationToken cancellationToken = default)
   {
-    IQueryable<Group> query = _groupRepository.Query(enableTracking, withDeleted);
+    var groups = await _groupRepository.GetAllAsync(
+      filter: userRole == "Admin"
+        ? filter
+        : x => x.CreatorId == currentUserId || x.Organization.OwnerId == currentUserId,
+      include: include ?? (q => q.Include(g => g.Organization).Include(g => g.Creator).Include(g => g.Members).Include(g => g.Rollcalls)),
+      orderBy: orderBy,
+      enableTracking: enableTracking,
+      withDeleted: withDeleted,
+      cancellationToken: cancellationToken);
 
-    if (userRole != "Admin")
-    {
-      query = query.Where(x => x.CreatorId == currentUserId || x.Organization.OwnerId == currentUserId);
-    }
-
-    if (filter != null)
-    {
-      query = query.Where(filter);
-    }
-
-    query = include != null
-      ? include(query)
-      : query.Include(g => g.Organization).Include(g => g.Creator).Include(g => g.Members).Include(g => g.Rollcalls);
-
-    if (orderBy != null)
-    {
-      query = orderBy(query);
-    }
-
-    List<Group> groups = await query.ToListAsync(cancellationToken);
     List<GroupResponseDto> response = _mapper.EntityToResponseDtoList(groups);
 
     return new ReturnModel<List<GroupResponseDto>>()

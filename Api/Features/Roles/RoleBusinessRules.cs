@@ -29,4 +29,12 @@ public class RoleBusinessRules(IRoleRepository _roleRepository)
       throw new BusinessException("Rol için benzersiz bir isim kullanılmalıdır.");
     }
   }
+
+  public void AdminRoleRequired(string userRole)
+  {
+    if (userRole != "Admin")
+    {
+      throw new ForbiddenException("Rol işlemleri için yetkiniz bulunmamaktadır.");
+    }
+  }
 }

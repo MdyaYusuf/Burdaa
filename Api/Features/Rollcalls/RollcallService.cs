@@ -24,28 +24,14 @@ public class RollcallService(
     bool withDeleted = false,
     CancellationToken cancellationToken = default)
   {
-    IQueryable<Rollcall> query = _rollcallRepository.Query(enableTracking, withDeleted);
+    var rollcalls = await _rollcallRepository.GetAllAsync(
+      filter: userRole == "Admin" ? filter : x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId,
+      include: include ?? (q => q.Include(x => x.Group).Include(x => x.Entries).ThenInclude(e => e.Member)),
+      orderBy: orderBy,
+      enableTracking: enableTracking,
+      withDeleted: withDeleted,
+      cancellationToken: cancellationToken);
 
-    if (userRole != "Admin")
-    {
-      query = query.Where(x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId);
-    }
-
-    if (filter != null)
-    {
-      query = query.Where(filter);
-    }
-
-    query = include != null
-      ? include(query)
-      : query.Include(r => r.Group).Include(r => r.Entries).ThenInclude(e => e.Member);
-
-    if (orderBy != null)
-    {
-      query = orderBy(query);
-    }
-
-    List<Rollcall> rollcalls = await query.ToListAsync(cancellationToken);
     List<RollcallResponseDto> response = _mapper.EntityToResponseDtoList(rollcalls);
 
     return new ReturnModel<List<RollcallResponseDto>>()

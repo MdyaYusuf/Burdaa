@@ -24,24 +24,14 @@ public class RoleService(
     bool withDeleted = false,
     CancellationToken cancellationToken = default)
   {
-    IQueryable<Role> query = _roleRepository.Query(enableTracking, withDeleted);
+    List<Role> roles = await _roleRepository.GetAllAsync(
+      filter,
+      include,
+      orderBy,
+      enableTracking,
+      withDeleted,
+      cancellationToken);
 
-    if (filter != null)
-    {
-      query = query.Where(filter);
-    }
-
-    if (include != null)
-    {
-      query = include(query);
-    }
-
-    if (orderBy != null)
-    {
-      query = orderBy(query);
-    }
-
-    List<Role> roles = await query.ToListAsync(cancellationToken);
     List<RoleResponseDto> response = _mapper.EntityToResponseDtoList(roles);
 
     return new ReturnModel<List<RoleResponseDto>>()
@@ -109,17 +99,14 @@ public class RoleService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
-    if (userRole != "Admin")
-    {
-      throw new ForbiddenException("Rol ekleme yetkiniz bulunmamaktadır.");
-    }
-
     var validationResult = await _createValidator.ValidateAsync(request, cancellationToken);
 
     if (!validationResult.IsValid)
     {
       throw new ValidationException(validationResult.Errors);
     }
+
+    _businessRules.AdminRoleRequired(userRole);
 
     await _businessRules.NameMustBeUniqueAsync(request.Name, cancellationToken);
 
@@ -144,10 +131,7 @@ public class RoleService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
-    if (userRole != "Admin")
-    {
-      throw new ForbiddenException("Rol güncelleme yetkiniz bulunmamaktadır.");
-    }
+    _businessRules.AdminRoleRequired(userRole);
 
     var validationResult = await _updateValidator.ValidateAsync(request, cancellationToken);
 
@@ -181,12 +165,9 @@ public class RoleService(
     string userRole,
     CancellationToken cancellationToken = default)
   {
-    if (userRole != "Admin")
-    {
-      throw new ForbiddenException("Rol silme yetkiniz bulunmamaktadır.");
-    }
-
     Role role = await _businessRules.GetRoleIfExistAsync(id, enableTracking: true, cancellationToken: cancellationToken);
+
+    _businessRules.AdminRoleRequired(userRole);
 
     _roleRepository.Delete(role);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
