@@ -1,6 +1,6 @@
 import { LandingScreen } from '../src/features/auth/screens/LandingScreen';
 
-export default function RootEntry() {
+export default function Page() {
   
   return <LandingScreen />;
 }

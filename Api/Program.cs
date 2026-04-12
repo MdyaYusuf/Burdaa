@@ -80,10 +80,13 @@ if (app.Environment.IsDevelopment())
 {
   app.MapOpenApi();
 }
+else
+{
+  app.UseHttpsRedirection();
+}
 
 app.UseCors();
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseAuthentication();

@@ -24,7 +24,7 @@ export default function TabLayout() {
            backgroundColor: theme.background,
         },
         headerTitleStyle: {
-           fontFamily: 'Manrope-Bold', // Using your Executive typography
+           fontFamily: 'Manrope-Bold',
            color: theme.primary,
         }
       }}>
