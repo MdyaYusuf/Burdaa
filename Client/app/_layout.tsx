@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch, useAppSelector } from '../src/core/hooks/useRedux';
 import { setCredentials, logoutUser } from '../src/features/auth/store/authSlice';
+import { clearOrganization } from '../src/features/organizations/store/organizationSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -29,12 +30,12 @@ export default function RootLayout() {
     'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
     'Manrope-ExtraBold': require('../assets/fonts/Manrope-ExtraBold.ttf'),
+    'Manrope-Bold': require('../assets/fonts/Manrope-ExtraBold.ttf'),
     ...FontAwesome.font,
   });
 
   useEffect(() => {
-
-    if (error){
+    if (error) {
       throw error;
     }
   }, [error]);
@@ -54,7 +55,8 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const segments = useSegments();
+  const { selectedOrganization } = useAppSelector((state) => state.organizations);
+  const segments = useSegments() as any;
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
 
@@ -70,8 +72,8 @@ function RootLayoutNav() {
         if (accessToken && savedUser) {
           dispatch(setCredentials(JSON.parse(savedUser)));
         } else {
-          // If no token ensure state is cleared
           dispatch(logoutUser());
+          dispatch(clearOrganization());
         }
       } catch (e) {
         console.warn("Session rehydration failed", e);
@@ -84,25 +86,33 @@ function RootLayoutNav() {
     initializeApp();
   }, [dispatch]);
 
-  // Authentication Guard The Watcher
+  // The Executive Watcher: Auth and Organization Guard
   useEffect(() => {
-
-    if (!isReady){
+    if (!isReady) {
       return;
     }
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inOrgSelection = segments.includes('organizations');
+    const atLanding = segments[0] === undefined || segments[0] === '';
 
-    // Logic: Redirect based on your Redux isAuthenticated state
-    if (!isAuthenticated && !inAuthGroup && segments[0] !== undefined) {
-      // Not logged in => Go to Landing
-      router.replace('/');
-    } 
-    else if (isAuthenticated && (inAuthGroup || segments[0] === undefined)) {
-      // Logged in => Go to Tabs
-      router.replace('/(tabs)');
+    // Not Logged In Logic
+    if (!isAuthenticated && !inAuthGroup && !atLanding) {
+      router.replace('/' as any);
+      return;
     }
-  }, [isAuthenticated, isReady, segments]);
+
+    // Logged In but No Organization Picked
+    if (isAuthenticated && !selectedOrganization && !inOrgSelection) {
+      router.replace('/organizations' as any);
+      return;
+    }
+
+    // Fully Ready => Go to Dashboard
+    if (isAuthenticated && selectedOrganization && (inAuthGroup || atLanding)) {
+      router.replace('/(tabs)' as any);
+    }
+  }, [isAuthenticated, selectedOrganization, isReady, segments]);
 
   if (!isReady) {
     return null;

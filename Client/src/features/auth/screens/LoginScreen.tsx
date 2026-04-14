@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  Pressable, 
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ActivityIndicator 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../../../core/constants/Theme';
 import { ExecutiveButton } from '../../../core/components/ExecutiveButton';
+import { ExecutiveBackButton } from '../../../core/components/ExecutiveBackButton'; // 🟦 Centralized Back Button
 import { useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../../core/hooks/useRedux';
 import { loginUser } from '../store/authSlice';
+import Toast from 'react-native-toast-message';
 
 const theme = Colors.light;
 
@@ -32,30 +34,44 @@ export const LoginScreen = () => {
   });
 
   const handleLogin = async () => {
-    
-    if (!formData.email || !formData.password){
-
+    if (!formData.email || !formData.password) {
       return;
     }
-    
-    const result = await dispatch(loginUser({ 
-      email: formData.email, 
-      password: formData.password 
+
+    const result = await dispatch(loginUser({
+      email: formData.email,
+      password: formData.password
     }));
 
     if (loginUser.fulfilled.match(result)) {
-      router.replace('/(tabs)');
+
+      Toast.show({
+        type: 'success',
+        text1: 'Oturum Açıldı',
+        text2: 'Oturumunuz başlatılıyor...',
+        visibilityTime: 2000,
+      });
+
+      setFormData({
+        email: '',
+        password: '',
+      });
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      {/* Floating Back Button Container */}
+      <View style={styles.backButtonContainer}>
+        <ExecutiveBackButton />
+      </View>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
@@ -71,14 +87,14 @@ export const LoginScreen = () => {
               <Text style={styles.label}>Email Address</Text>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="email-outline" size={22} color={theme.subText} style={styles.inputIcon} />
-                <TextInput 
+                <TextInput
                   style={styles.input}
                   placeholder="name@company.com"
                   placeholderTextColor={theme.subText}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  onChangeText={(val) => setFormData({...formData, email: val})}
+                  onChangeText={(val) => setFormData({ ...formData, email: val })}
                 />
               </View>
             </View>
@@ -86,30 +102,32 @@ export const LoginScreen = () => {
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Password</Text>
-                <Pressable><Text style={styles.forgotText}>Forgot Password?</Text></Pressable>
+                <Pressable>
+                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                </Pressable>
               </View>
               <View style={styles.inputWrapper}>
                 <MaterialCommunityIcons name="lock-outline" size={22} color={theme.subText} style={styles.inputIcon} />
-                <TextInput 
+                <TextInput
                   style={styles.input}
                   placeholder="Enter your password"
                   placeholderTextColor={theme.subText}
                   secureTextEntry={!showPassword}
-                  onChangeText={(val) => setFormData({...formData, password: val})}
+                  onChangeText={(val) => setFormData({ ...formData, password: val })}
                 />
                 <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                  <MaterialCommunityIcons 
-                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                    size={22} 
-                    color={theme.subText} 
+                  <MaterialCommunityIcons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={22}
+                    color={theme.subText}
                   />
                 </Pressable>
               </View>
             </View>
 
             <View style={styles.ctaContainer}>
-              <ExecutiveButton 
-                title={isLoading ? "" : "Login"} 
+              <ExecutiveButton
+                title={isLoading ? "" : "Login"}
                 onPress={handleLogin}
                 disabled={isLoading}
               >
@@ -131,9 +149,17 @@ export const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  scrollContent: { 
+
+  backButtonContainer: {
+    position: 'absolute',
+    top: 60,
+    left: Spacing.lg,
+    zIndex: 10,
+  },
+
+  scrollContent: {
     padding: Spacing.lg,
-    paddingTop: 60 + Spacing.xl,
+    paddingTop: 120 + Spacing.xl,
   },
   header: { marginBottom: Spacing.xl },
   heroTitle: {
@@ -160,11 +186,11 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginLeft: 4,
   },
-  forgotText: { 
-    fontSize: 13, 
-    fontFamily: 'Inter-Bold', 
+  forgotText: {
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
     color: theme.primary,
-    marginRight: 4 
+    marginRight: 4
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -174,7 +200,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: 60,
     borderWidth: 1,
-    borderColor: theme.outline, 
+    borderColor: theme.outline,
   },
   inputIcon: { marginRight: Spacing.sm },
   input: {

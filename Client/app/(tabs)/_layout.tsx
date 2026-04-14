@@ -3,6 +3,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../src/core/constants/Theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -18,14 +19,14 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.tint,
+        tabBarActiveTintColor: theme.primary,
         headerShown: false,
         headerStyle: {
-           backgroundColor: theme.background,
+          backgroundColor: theme.background,
         },
         headerTitleStyle: {
-           fontFamily: 'Manrope-Bold',
-           color: theme.primary,
+          fontFamily: 'Manrope-Bold',
+          color: theme.primary,
         }
       }}>
       <Tabs.Screen
@@ -33,6 +34,13 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="organizations"
+        options={{
+          title: 'Ledgers',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="office-building" size={26} color={color} />,
         }}
       />
     </Tabs>

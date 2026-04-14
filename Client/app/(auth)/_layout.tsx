@@ -5,15 +5,15 @@ export default function AuthLayout() {
   const theme = Colors.light;
 
   return (
-    <Stack 
-      screenOptions={{ 
-        headerShown: true,
+    <Stack
+      screenOptions={{
+        headerShown: false,
         headerTitle: "",
         headerShadowVisible: false,
         headerTransparent: true,
         headerTintColor: theme.primary,
-        headerBackTitle: "",         
-      }} 
+        headerBackTitle: "",
+      }}
     >
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />

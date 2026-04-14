@@ -3,27 +3,54 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../../src/core/constants/Theme';
-import { useAppSelector } from '../../src/core/hooks/useRedux';
+import { useAppSelector, useAppDispatch } from '../../src/core/hooks/useRedux';
+import { ProfileButton } from '../../src/core/components/ProfileButton';
+import { ExecutiveBackButton } from '../../src/core/components/ExecutiveBackButton';
+import { router } from 'expo-router';
 
 const theme = Colors.light;
 
+const EntryItem = ({ name, role, status, time, statusColor }: any) => (
+  <View style={styles.entryItem}>
+    <View style={styles.entryMain}>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>{name[0]}</Text>
+      </View>
+      <View>
+        <Text style={styles.entryName}>{name}</Text>
+        <Text style={styles.entryRole}>{role}</Text>
+      </View>
+    </View>
+    <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+      <Text style={styles.statusText}>{status.toUpperCase()}</Text>
+    </View>
+    <Text style={styles.entryTime}>{time}</Text>
+  </View>
+);
+
 export default function DashboardScreen() {
-  const { user } = useAppSelector((state) => state.auth);
+  const { selectedOrganization } = useAppSelector((state) => state.organizations);
+
+  const handleBackToOrganizations = () => {
+    router.push('/organizations' as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Executive Header Row */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.label}>TODAY'S LEDGER</Text>
-          <Text style={styles.heroTitle}>Overview</Text>
+        <View style={styles.headerLeading}>
+          <ExecutiveBackButton onPress={handleBackToOrganizations} />
+          <View style={styles.headerTitles}>
+            <Text style={styles.label}>{selectedOrganization?.name.toUpperCase() || "TODAY'S LEDGER"}</Text>
+            <Text style={styles.heroTitle}>Overview</Text>
+          </View>
         </View>
-        <TouchableOpacity style={styles.profileCircle}>
-           <MaterialCommunityIcons name="account" size={24} color={theme.primary} />
-        </TouchableOpacity>
+        <ProfileButton />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
+
         {/* Statistics Ledger */}
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, styles.featuredCard]}>
@@ -62,19 +89,23 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Active Groups */}
+        {/* Active Groups Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Active Groups</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See All →</Text></TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>See All →</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.groupCard}>
           <View style={styles.groupImageWrapper}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=400&q=80' }} 
-              style={styles.groupImage} 
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=400&q=80' }}
+              style={styles.groupImage}
             />
-            <View style={styles.groupBadge}><Text style={styles.badgeText}>ENGINEERING</Text></View>
+            <View style={styles.groupBadge}>
+              <Text style={styles.badgeText}>ENGINEERING</Text>
+            </View>
           </View>
           <View style={styles.groupInfo}>
             <Text style={styles.groupName}>Engineering Alpha</Text>
@@ -88,11 +119,11 @@ export default function DashboardScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Recent Entries */}
+        {/* Recent Entries Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Entries</Text>
         </View>
-        
+
         <View style={styles.ledgerCard}>
           <EntryItem name="James Sterling" role="Senior Developer" status="Present" time="08:42 AM" statusColor={theme.present} />
           <EntryItem name="Maya Williams" role="Creative Lead" status="Late" time="09:15 AM" statusColor={theme.late} />
@@ -109,36 +140,28 @@ export default function DashboardScreen() {
   );
 }
 
-const EntryItem = ({ name, role, status, time, statusColor }: any) => (
-  <View style={styles.entryItem}>
-    <View style={styles.entryMain}>
-      <View style={styles.avatar}><Text style={styles.avatarText}>{name[0]}</Text></View>
-      <View>
-        <Text style={styles.entryName}>{name}</Text>
-        <Text style={styles.entryRole}>{role}</Text>
-      </View>
-    </View>
-    <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-      <Text style={styles.statusText}>{status.toUpperCase()}</Text>
-    </View>
-    <Text style={styles.entryTime}>{time}</Text>
-  </View>
-);
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  headerLeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  headerTitles: {
+    justifyContent: 'center',
   },
   scrollContent: { padding: Spacing.lg, paddingBottom: 100 },
   label: { fontFamily: 'Inter-Bold', fontSize: 10, color: theme.subText, letterSpacing: 1.5 },
-  heroTitle: { fontFamily: 'Manrope-ExtraBold', fontSize: 32, color: theme.primary, marginTop: 4 },
-  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.tonalLayerLow, justifyContent: 'center', alignItems: 'center' },
-  
+  heroTitle: { fontFamily: 'Manrope-ExtraBold', fontSize: 32, color: theme.primary, marginTop: -2 },
+
   statsGrid: { marginBottom: Spacing.xl },
   featuredCard: { backgroundColor: theme.primary, marginBottom: Spacing.md, height: 160, borderRadius: Radius.xl },
   statsRow: { flexDirection: 'row', gap: Spacing.md },
@@ -181,5 +204,20 @@ const styles = StyleSheet.create({
   statusText: { fontFamily: 'Inter-Bold', fontSize: 9, color: theme.primary },
   entryTime: { flex: 1, textAlign: 'right', fontFamily: 'Inter-Medium', fontSize: 12, color: theme.subText },
 
-  fab: { position: 'absolute', bottom: 30, right: 24, width: 64, height: 64, borderRadius: 24, backgroundColor: 'rgba(4,23,44,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 24,
+    backgroundColor: 'rgba(4,23,44,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8
+  }
 });

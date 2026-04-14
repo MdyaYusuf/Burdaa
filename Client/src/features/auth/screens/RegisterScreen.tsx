@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../../core/hooks/useRedux';
 import { registerUser } from '../store/authSlice';
 import { RegisterUserRequest } from '../types/Authentication';
+import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 
 const theme = Colors.light;
 
@@ -62,6 +63,10 @@ export const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.backButtonContainer}>
+        <ExecutiveBackButton />
+      </View>
+      
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={{ flex: 1 }}
@@ -158,6 +163,12 @@ export const RegisterScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
+  backButtonContainer: {
+    position: 'absolute',
+    top: 60,
+    left: Spacing.lg,
+    zIndex: 10,
+  },
   scrollContent: { padding: Spacing.lg, paddingTop: 60 + Spacing.xl, },
   header: { marginBottom: Spacing.xl },
   heroTitle: {
