@@ -10,18 +10,21 @@ let isRefreshing = false;
 
 export const apiClient = {
   async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}, 
+    endpoint: string,
+    options: RequestInit = {},
     isRetry = false // Flag to prevent infinite loops
   ): Promise<ReturnModel<T>> {
-    
+
     const accessToken = await SecureStore.getItemAsync('accessToken');
     const method = options.method?.toUpperCase() || 'GET';
 
     const headers = new Headers(options.headers);
-    headers.set('Content-Type', 'application/json');
 
-    if (accessToken){
+    if (!(options.body instanceof FormData)) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    if (accessToken) {
       headers.set('Authorization', `Bearer ${accessToken}`);
     }
 
@@ -29,11 +32,11 @@ export const apiClient = {
 
     try {
       const response = await fetch(`${BASE_URL}${endpoint}`, config);
-      
+
       // Handle 401 Unauthorized: Token Expired
       if (response.status === 401 && !isRetry && !endpoint.includes('auth/login')) {
         const refreshResult = await this.handleTokenRefresh();
-        
+
         if (refreshResult) {
           // Retry the original request with the new token
           return this.request<T>(endpoint, options, true);
@@ -74,7 +77,7 @@ export const apiClient = {
   // The Token Refresh Logic
   async handleTokenRefresh(): Promise<boolean> {
 
-    if (isRefreshing){
+    if (isRefreshing) {
 
       return false;
     }
@@ -83,14 +86,14 @@ export const apiClient = {
     try {
       const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
-      if (!refreshToken){
+      if (!refreshToken) {
         throw new Error("Refresh token bulunamadı.");
       }
 
       const response = await fetch(`${BASE_URL}/auth/refresh-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(refreshToken), 
+        body: JSON.stringify(refreshToken),
       });
 
       const result: ReturnModel<TokenResponseDto> = await response.json();
@@ -99,11 +102,11 @@ export const apiClient = {
         await SecureStore.setItemAsync('accessToken', result.data.accessToken);
         await SecureStore.setItemAsync('refreshToken', result.data.refreshToken);
         await SecureStore.setItemAsync('user', JSON.stringify(result.data.user));
-        
+
         isRefreshing = false;
         return true;
       }
-      
+
       throw new Error("Refresh failed on server");
     } catch (e) {
       console.error("Token Refresh Error:", e);
@@ -111,13 +114,13 @@ export const apiClient = {
       await SecureStore.deleteItemAsync('accessToken');
       await SecureStore.deleteItemAsync('refreshToken');
       await SecureStore.deleteItemAsync('user');
-      
+
       Toast.show({
         type: 'error',
         text1: 'Oturum Hatası',
         text2: 'Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.',
       });
-      
+
       isRefreshing = false;
       return false;
     }

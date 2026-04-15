@@ -4,6 +4,8 @@ import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../src/core/constants/Theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAppSelector } from '@/src/core/hooks/useRedux';
+import Toast from 'react-native-toast-message';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -15,32 +17,61 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+  const { selectedOrganization } = useAppSelector((state) => state.organizations);
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.primary,
         headerShown: false,
-        headerStyle: {
+        tabBarStyle: {
           backgroundColor: theme.background,
+          borderTopWidth: 0,
+          elevation: 0,
         },
         headerTitleStyle: {
           fontFamily: 'Manrope-Bold',
           color: theme.primary,
         }
       }}>
+
+      {/* Home Tab */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon
+              name="home"
+              color={selectedOrganization ? color : theme.subText + '40'}
+            />
+          ),
         }}
+        listeners={() => ({
+          tabPress: (e) => {
+            if (!selectedOrganization) {
+              e.preventDefault();
+
+              Toast.show({
+                type: 'info',
+                text1: 'Organizasyon seçiniz.',
+                text2: 'Dashboard yönlendirmesi için lütfen bir organizasyon seçiniz.',
+                position: 'bottom',
+                bottomOffset: 100,
+              });
+            }
+          },
+        })}
       />
+
+      {/* Organizations Tab */}
       <Tabs.Screen
         name="organizations"
         options={{
-          title: 'Ledgers',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="office-building" size={26} color={color} />,
+          title: 'Organizations',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="office-building" size={26} color={color} />
+          ),
         }}
       />
     </Tabs>

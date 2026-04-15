@@ -94,6 +94,7 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOrgSelection = segments.includes('organizations');
+    const isCreatingOrg = segments.includes('create-organization');
     const atLanding = segments[0] === undefined || segments[0] === '';
 
     // Not Logged In Logic
@@ -103,14 +104,21 @@ function RootLayoutNav() {
     }
 
     // Logged In but No Organization Picked
-    if (isAuthenticated && !selectedOrganization && !inOrgSelection) {
-      router.replace('/organizations' as any);
+    if (isAuthenticated && !selectedOrganization && !inOrgSelection && !isCreatingOrg) {
+      Toast.show({
+        type: 'info',
+        text1: 'Organizasyon seçiniz.',
+        text2: 'Dashboard yönlendirmesi için lütfen bir organizasyon seçiniz.',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+      router.replace('/organizations');
       return;
     }
 
     // Fully Ready => Go to Dashboard
     if (isAuthenticated && selectedOrganization && (inAuthGroup || atLanding)) {
-      router.replace('/(tabs)' as any);
+      router.replace('/(tabs)');
     }
   }, [isAuthenticated, selectedOrganization, isReady, segments]);
 
@@ -136,6 +144,14 @@ function RootLayoutNav() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="create-organization"
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+            animation: 'slide_from_bottom'
+          }}
+        />
       </Stack>
       <Toast />
     </ThemeProvider>

@@ -1,45 +1,55 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  RefreshControl,
+  Image,
+  InteractionManager
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius } from '../../../core/constants/Theme';
 import { ProfileButton } from '../../../core/components/ProfileButton';
-import { OrganizationResponseDto } from '../types/Organization';
-import { selectOrganization } from '../store/organizationSlice';
+import { selectOrganization, fetchOrganizations } from '../store/organizationSlice';
 import { router } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../../core/hooks/useRedux';
 
 const theme = Colors.light;
+const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 export default function OrganizationScreen() {
   const dispatch = useAppDispatch();
-  const { selectedOrganization } = useAppSelector((state) => state.organizations);
+  const { organizations, selectedOrganization, isLoading } = useAppSelector((state) => state.organizations);
 
-  const organizations: OrganizationResponseDto[] = [
-    {
-      id: '1',
-      name: 'Global Tech Solutions',
-      address: 'New York, US',
-      totalGroups: 12,
-      ownerName: 'Yusuf Aydın',
-      createdDate: new Date().toISOString(),
-      ownerId: 'owner-1'
-    },
-    {
-      id: '2',
-      name: 'Evergreen Academy',
-      address: 'Berlin, DE',
-      totalGroups: 5,
-      ownerName: 'Yusuf Aydın',
-      createdDate: new Date().toISOString(),
-      ownerId: 'owner-1'
-    },
-  ];
+  // isReady ensures images only mount after navigation animations settle
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setIsReady(true);
+      dispatch(fetchOrganizations());
+    });
+
+    return () => task.cancel();
+  }, [dispatch]);
+
+  const onRefresh = () => {
+    dispatch(fetchOrganizations());
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={theme.primary} />
+        }
+      >
         {/* Search and Profile */}
         <View style={styles.commandRow}>
           <View style={styles.searchContainer}>
@@ -58,9 +68,18 @@ export default function OrganizationScreen() {
           <Text style={styles.ledgerTitle}>Select Organization</Text>
         </View>
 
+        {/* Empty State Handling */}
+        {!isLoading && organizations.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="office-building-marker-outline" size={48} color={theme.subText + '40'} />
+            <Text style={styles.emptyText}>No organizations found under your account.</Text>
+          </View>
+        )}
+
         <View style={styles.listContainer}>
           {organizations.map((org) => {
             const isCurrent = String(org.id) === String(selectedOrganization?.id);
+            const fullLogoUri = org.logoUrl ? `${IMAGE_BASE_URL}${org.logoUrl}` : undefined;
 
             return (
               <TouchableOpacity
@@ -77,15 +96,27 @@ export default function OrganizationScreen() {
               >
                 <View style={styles.orgContent}>
                   <View style={[styles.iconBox, isCurrent ? styles.activeIconBox : styles.inactiveIconBox]}>
-                    <MaterialCommunityIcons
-                      name={org.name.includes("Academy") ? "school" : "office-building"}
-                      size={32}
-                      color={isCurrent ? theme.onPrimary : theme.subText}
-                    />
+                    {/* Guard: Render Image only if interaction is complete and logo exists */}
+                    {isReady && fullLogoUri ? (
+                      <Image
+                        key={fullLogoUri} // Forces fresh render if URI changes
+                        source={{
+                          uri: fullLogoUri,
+                        }}
+                        style={styles.orgLogo}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name={org.name.toLowerCase().includes("academy") ? "school" : "office-building"}
+                        size={32}
+                        color={isCurrent ? theme.onPrimary : theme.subText}
+                      />
+                    )}
                   </View>
                   <View style={styles.orgInfo}>
                     <View style={styles.orgTitleRow}>
-                      <Text style={styles.orgName}>{org.name}</Text>
+                      <Text style={styles.orgName} numberOfLines={1}>{org.name}</Text>
                       {isCurrent && (
                         <View style={styles.currentBadge}>
                           <Text style={styles.currentBadgeText}>CURRENT</Text>
@@ -103,7 +134,9 @@ export default function OrganizationScreen() {
                       </View>
                       <View style={styles.metaItem}>
                         <MaterialCommunityIcons name="map-marker" size={16} color={theme.subText} />
-                        <Text style={styles.metaText}>{org.address || 'Location N/A'}</Text>
+                        <Text style={styles.metaText} numberOfLines={1}>
+                          {org.address || 'Location N/A'}
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -115,7 +148,10 @@ export default function OrganizationScreen() {
 
         <View style={styles.createSection}>
           <Text style={styles.createPrompt}>Managing a new department?</Text>
-          <TouchableOpacity style={styles.createButton}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => router.push('/create-organization')}
+          >
             <MaterialCommunityIcons name="office-building-plus" size={20} color={theme.onPrimary} />
             <Text style={styles.createButtonText}>Add New Organization</Text>
           </TouchableOpacity>
@@ -144,12 +180,24 @@ const styles = StyleSheet.create({
   activeCard: { backgroundColor: theme.cardBase, borderWidth: 2, borderColor: theme.primary, elevation: 4, shadowColor: theme.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24 },
   inactiveCard: { backgroundColor: theme.tonalLayerLow },
   orgContent: { flexDirection: 'row', gap: Spacing.md },
-  iconBox: { width: 64, height: 64, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  iconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  orgLogo: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+  },
   activeIconBox: { backgroundColor: theme.primary },
   inactiveIconBox: { backgroundColor: theme.cardBase, borderWidth: 1, borderColor: theme.outline },
   orgInfo: { flex: 1 },
   orgTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  orgName: { fontFamily: 'Manrope-Bold', fontSize: 20, color: theme.primary },
+  orgName: { fontFamily: 'Manrope-Bold', fontSize: 20, color: theme.primary, flex: 1, marginRight: 8 },
   currentBadge: { backgroundColor: theme.primary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 },
   currentBadgeText: { fontFamily: 'Inter-Bold', fontSize: 9, color: theme.onPrimary },
   orgDesc: { fontFamily: 'Inter-Regular', fontSize: 14, color: theme.subText, lineHeight: 20 },
@@ -160,5 +208,7 @@ const styles = StyleSheet.create({
   createPrompt: { fontFamily: 'Inter-Medium', fontSize: 14, color: theme.subText, marginBottom: 16 },
   createButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.primary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 99 },
   createButtonText: { fontFamily: 'Inter-Bold', fontSize: 14, color: theme.onPrimary },
-  fab: { position: 'absolute', bottom: 30, right: 24, width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(4,23,44,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 6 }
+  fab: { position: 'absolute', bottom: 30, right: 24, width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(4,23,44,0.9)', justifyContent: 'center', alignItems: 'center', elevation: 6 },
+  emptyContainer: { alignItems: 'center', marginTop: 60, gap: 12 },
+  emptyText: { fontFamily: 'Inter-Medium', fontSize: 14, color: theme.subText, textAlign: 'center', paddingHorizontal: 40 }
 });
