@@ -163,6 +163,16 @@ function RootLayoutNav() {
             animation: 'slide_from_bottom'
           }}
         />
+
+        {/* Member Creation Modal */}
+        <Stack.Screen
+          name="create-member"
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+            animation: 'slide_from_bottom'
+          }}
+        />
       </Stack>
       <Toast />
     </ThemeProvider>

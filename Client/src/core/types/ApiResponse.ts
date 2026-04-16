@@ -5,3 +5,5 @@ export interface ReturnModel<T> {
   statusCode: number;
   errors?: string[];
 }
+
+export type NoData = null;

@@ -18,7 +18,7 @@ import { fetchGroups } from '@/src/features/groups/store/groupSlice';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { GroupResponseDto } from '@/src/features/groups/types/Group';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
-import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton'; // 🟦 Added for navigation
+import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 
 export function GroupScreenComponent() {
   const router = useRouter();
@@ -33,11 +33,12 @@ export function GroupScreenComponent() {
   useFocusEffect(
     useCallback(() => {
       setIsReady(false);
-      const task = InteractionManager.runAfterInteractions(() => {
+      const timer = setTimeout(() => {
         setIsReady(true);
         dispatch(fetchGroups());
-      });
-      return () => task.cancel();
+      }, 0);
+
+      return () => clearTimeout(timer);
     }, [dispatch])
   );
 
@@ -47,8 +48,6 @@ export function GroupScreenComponent() {
   );
 
   const handleCreatePress = () => router.push('/create-group' as any);
-
-  // 🟦 Navigation back to Dashboard/Home
   const handleBackPress = () => router.push('/(tabs)');
 
   return (
@@ -56,7 +55,7 @@ export function GroupScreenComponent() {
       style={[styles.container, { backgroundColor: theme.background }]}
       edges={['top', 'left', 'right']}
     >
-      {/* 1. Branded Header: Back, Titles, and Profile */}
+      {/* Branded Header */}
       <View style={styles.header}>
         <View style={styles.headerLeading}>
           <ExecutiveBackButton onPress={handleBackPress} />
@@ -70,7 +69,7 @@ export function GroupScreenComponent() {
         <ProfileButton />
       </View>
 
-      {/* 2. Command Row: Search (Now below the title) */}
+      {/* Search */}
       <View style={styles.searchRow}>
         <View style={[styles.searchContainer, { backgroundColor: theme.tonalLayerLow }]}>
           <MaterialCommunityIcons
@@ -133,6 +132,7 @@ export function GroupScreenComponent() {
                 { backgroundColor: theme.cardBase, shadowColor: theme.primary }
               ]}
               activeOpacity={0.8}
+              onPress={() => router.push(`/groups/${group.id}` as any)}
             >
               <View style={styles.cardHeader}>
                 <View style={styles.nameBlock}>
@@ -190,7 +190,9 @@ export function GroupScreenComponent() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -222,80 +224,83 @@ const styles = StyleSheet.create({
     height: 56,
   },
   searchIcon: {
-    marginRight: Spacing.sm
+    marginRight: Spacing.sm,
   },
   searchInput: {
     flex: 1,
     fontFamily: 'Inter-Medium',
-    fontSize: 15
+    fontSize: 15,
   },
   ledgerLabel: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    letterSpacing: 1.5
+    letterSpacing: 1.5,
   },
   ledgerTitle: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 32,
-    marginTop: -2
+    marginTop: -2,
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: 120
+    paddingBottom: 120,
   },
   listContainer: {
-    gap: Spacing.md
+    gap: Spacing.md,
   },
   groupCard: {
     borderRadius: Radius.xl,
     padding: Spacing.lg,
     elevation: 2,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
     shadowOpacity: 0.05,
-    shadowRadius: 12
+    shadowRadius: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.xl
+    marginBottom: Spacing.xl,
   },
   nameBlock: {
     flex: 1,
-    marginRight: 12
+    marginRight: 12,
   },
   groupName: {
     fontFamily: 'Manrope-Bold',
     fontSize: 20,
-    lineHeight: 26
+    lineHeight: 26,
   },
   memberCountRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 4
+    marginTop: 4,
   },
   memberCountText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 14
+    fontSize: 14,
   },
   rollcallInfo: {
-    alignItems: 'flex-end'
+    alignItems: 'flex-end',
   },
   rollcallLabel: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    letterSpacing: 1
+    letterSpacing: 1,
   },
   rollcallValue: {
     fontFamily: 'Inter-Bold',
     fontSize: 16,
-    marginTop: 2
+    marginTop: 2,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   statusBadge: {
     flexDirection: 'row',
@@ -303,17 +308,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 99,
-    gap: 6
+    gap: 6,
   },
   statusDot: {
     width: 6,
     height: 6,
-    borderRadius: 3
+    borderRadius: 3,
   },
   statusText: {
     fontFamily: 'Inter-Bold',
     fontSize: 11,
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
   fab: {
     position: 'absolute',
@@ -325,18 +330,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
     shadowOpacity: 0.3,
-    shadowRadius: 24
+    shadowRadius: 24,
   },
   emptyStateBlock: {
     marginTop: 60,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   createPrompt: {
     fontFamily: 'Inter-Medium',
     fontSize: 14,
-    marginBottom: 16
+    marginBottom: 16,
   },
   createButton: {
     flexDirection: 'row',
@@ -344,10 +352,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 24,
     paddingVertical: 14,
-    borderRadius: 99
+    borderRadius: 99,
   },
   createButtonText: {
     fontFamily: 'Inter-Bold',
-    fontSize: 14
-  }
+    fontSize: 14,
+  },
 });
