@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { OrganizationResponseDto } from '../types/Organization';
 import { organizationService } from '../services/organizationService';
+import { logoutUser } from '../../auth/store/authSlice';
 
 interface OrganizationState {
   organizations: OrganizationResponseDto[];
@@ -22,6 +23,7 @@ export const fetchOrganizations = createAsyncThunk(
     const response = await organizationService.getAll();
 
     if (response.success && response.data) {
+
       return response.data;
     }
     return rejectWithValue(response.message);
@@ -34,10 +36,11 @@ export const createOrganization = createAsyncThunk(
     const response = await organizationService.create(formData);
 
     if (response.success) {
-      // We wait for the backend and then pull the fresh list
       dispatch(fetchOrganizations());
+
       return response.data;
     }
+
     const errorMsg = response.errors && response.errors.length > 0
       ? response.errors[0]
       : response.message;
@@ -81,8 +84,14 @@ const organizationSlice = createSlice({
       .addCase(createOrganization.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.organizations = [];
+        state.selectedOrganization = null;
+        state.isLoading = false;
+        state.error = null;
       });
-  }
+  },
 });
 
 export const { selectOrganization, clearOrganization } = organizationSlice.actions;

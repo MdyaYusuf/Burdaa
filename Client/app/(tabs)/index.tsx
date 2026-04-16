@@ -1,14 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius } from '../../src/core/constants/Theme';
-import { useAppSelector, useAppDispatch } from '../../src/core/hooks/useRedux';
-import { ProfileButton } from '../../src/core/components/ProfileButton';
-import { ExecutiveBackButton } from '../../src/core/components/ExecutiveBackButton';
-import { router } from 'expo-router';
+import { Colors, Spacing, Radius } from '@/src/core/constants/Theme';
+import { useAppSelector, useAppDispatch } from '@/src/core/hooks/useRedux';
+import { ProfileButton } from '@/src/core/components/ProfileButton';
+import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
+import { router, useFocusEffect } from 'expo-router';
+import { fetchGroups } from '@/src/features/groups/store/groupSlice';
 
 const theme = Colors.light;
+const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 const EntryItem = ({ name, role, status, time, statusColor }: any) => (
   <View style={styles.entryItem}>
@@ -29,11 +31,23 @@ const EntryItem = ({ name, role, status, time, statusColor }: any) => (
 );
 
 export default function DashboardScreen() {
+  const dispatch = useAppDispatch();
   const { selectedOrganization } = useAppSelector((state) => state.organizations);
+  const { groups, isLoading } = useAppSelector((state) => state.groups);
+
+  // Sync groups on focus
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchGroups());
+    }, [dispatch])
+  );
 
   const handleBackToOrganizations = () => {
     router.push('/organizations' as any);
   };
+
+  // Filter groups for the current organization
+  const activeGroups = groups.filter(g => g.organizationId === selectedOrganization?.id);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -49,9 +63,14 @@ export default function DashboardScreen() {
         <ProfileButton />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-
-        {/* Statistics Ledger */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={() => dispatch(fetchGroups())} tintColor={theme.primary} />
+        }
+      >
+        {/* Statistics Ledger - Currently hardcoded, but UI is ready */}
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, styles.featuredCard]}>
             <View style={styles.statHeader}>
@@ -60,8 +79,8 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.statLabelLight}>PRESENT</Text>
             </View>
-            <Text style={styles.statNumberLight}>428</Text>
-            <Text style={styles.statSubtextLight}>+12% from yesterday</Text>
+            <Text style={styles.statNumberLight}>0</Text>
+            <Text style={styles.statSubtextLight}>Live attendance data</Text>
           </View>
 
           <View style={styles.statsRow}>
@@ -72,8 +91,8 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={styles.statLabel}>ABSENT</Text>
               </View>
-              <Text style={styles.statNumber}>14</Text>
-              <Text style={[styles.statSubtext, { color: '#ba1a1a' }]}>2.4% rate</Text>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={[styles.statSubtext, { color: '#ba1a1a' }]}>0% rate</Text>
             </View>
 
             <View style={[styles.statCard, styles.secondaryCard]}>
@@ -83,41 +102,77 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={styles.statLabel}>LATE</Text>
               </View>
-              <Text style={styles.statNumber}>31</Text>
-              <Text style={[styles.statSubtext, { color: '#ac8d64' }]}>-5% improvement</Text>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={[styles.statSubtext, { color: '#ac8d64' }]}>Tracking started</Text>
             </View>
           </View>
         </View>
 
-        {/* Active Groups Section */}
+        {/* Dynamic Active Groups Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Active Groups</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
             <Text style={styles.seeAll}>See All →</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.groupCard}>
-          <View style={styles.groupImageWrapper}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=400&q=80' }}
-              style={styles.groupImage}
-            />
-            <View style={styles.groupBadge}>
-              <Text style={styles.badgeText}>ENGINEERING</Text>
+        <View style={styles.dynamicGroupList}>
+          {activeGroups.length > 0 ? (
+            activeGroups.slice(0, 2).map((group) => (
+              <TouchableOpacity
+                key={group.id}
+                style={styles.groupCard}
+                onPress={() => router.push(`/(tabs)/groups`)} // Update this when Detail Page is ready
+              >
+                <View style={styles.groupImageWrapper}>
+                  {selectedOrganization?.logoUrl ? (
+                    <Image
+                      source={{ uri: `${IMAGE_BASE_URL}${selectedOrganization.logoUrl}` }}
+                      style={styles.groupImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[
+                      styles.groupImage,
+                      {
+                        backgroundColor: theme.cardBase,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: theme.outline
+                      }
+                    ]}>
+                      <MaterialCommunityIcons
+                        name={selectedOrganization?.name.toLowerCase().includes("academy") ? "school" : "office-building"}
+                        size={40}
+                        color={theme.subText}
+                      />
+                    </View>
+                  )}
+                  <View style={styles.groupBadge}>
+                    <Text style={styles.badgeText}>{group.isActive ? 'ACTIVE' : 'INACTIVE'}</Text>
+                  </View>
+                </View>
+                <View style={styles.groupInfo}>
+                  <Text style={styles.groupName} numberOfLines={1}>{group.name}</Text>
+                  <Text style={styles.groupDesc} numberOfLines={2}>
+                    {group.description || "No description provided for this roster."}
+                  </Text>
+                  <View style={styles.groupMeta}>
+                    <View style={styles.metaPill}>
+                      <MaterialCommunityIcons name="account-group" size={14} color={theme.primary} />
+                      <Text style={styles.metaText}>{group.totalMembers} Members</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyGroupHint}>
+              <Text style={styles.emptyHintText}>No active groups found in this organization.</Text>
             </View>
-          </View>
-          <View style={styles.groupInfo}>
-            <Text style={styles.groupName}>Engineering Alpha</Text>
-            <Text style={styles.groupDesc}>Core development and system architecture team.</Text>
-            <View style={styles.groupMeta}>
-              <View style={styles.metaPill}>
-                <MaterialCommunityIcons name="account-group" size={14} color={theme.primary} />
-                <Text style={styles.metaText}>124 Members</Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
+          )}
+        </View>
 
         {/* Recent Entries Section */}
         <View style={styles.sectionHeader}>
@@ -125,15 +180,13 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.ledgerCard}>
-          <EntryItem name="James Sterling" role="Senior Developer" status="Present" time="08:42 AM" statusColor={theme.present} />
-          <EntryItem name="Maya Williams" role="Creative Lead" status="Late" time="09:15 AM" statusColor={theme.late} />
-          <EntryItem name="Robert Chen" role="Product Manager" status="Absent" time="---" statusColor={theme.absent} />
+          <Text style={styles.comingSoonText}>Rollcall history will appear here once sessions begin.</Text>
         </View>
 
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab}>
+      {/* Persistent FAB */}
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/create-group' as any)}>
         <MaterialCommunityIcons name="plus" size={32} color={theme.onPrimary} />
       </TouchableOpacity>
     </SafeAreaView>
@@ -158,10 +211,9 @@ const styles = StyleSheet.create({
   headerTitles: {
     justifyContent: 'center',
   },
-  scrollContent: { padding: Spacing.lg, paddingBottom: 100 },
+  scrollContent: { padding: Spacing.lg, paddingBottom: 120 },
   label: { fontFamily: 'Inter-Bold', fontSize: 10, color: theme.subText, letterSpacing: 1.5 },
   heroTitle: { fontFamily: 'Manrope-ExtraBold', fontSize: 32, color: theme.primary, marginTop: -2 },
-
   statsGrid: { marginBottom: Spacing.xl },
   featuredCard: { backgroundColor: theme.primary, marginBottom: Spacing.md, height: 160, borderRadius: Radius.xl },
   statsRow: { flexDirection: 'row', gap: Spacing.md },
@@ -176,12 +228,11 @@ const styles = StyleSheet.create({
   statNumberLight: { fontFamily: 'Manrope-ExtraBold', fontSize: 48, color: theme.onPrimary },
   statSubtext: { fontFamily: 'Inter-Medium', fontSize: 11 },
   statSubtextLight: { fontFamily: 'Inter-Medium', fontSize: 12, color: 'rgba(255,255,255,0.7)' },
-
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md, marginTop: Spacing.lg },
   sectionTitle: { fontFamily: 'Manrope-Bold', fontSize: 22, color: theme.primary },
   seeAll: { fontFamily: 'Inter-Bold', fontSize: 13, color: theme.primary },
-
-  groupCard: { backgroundColor: theme.tonalLayerLow, borderRadius: Radius.xl, padding: 6, flexDirection: 'row', alignItems: 'center' },
+  dynamicGroupList: { gap: Spacing.md },
+  groupCard: { backgroundColor: theme.tonalLayerLow, borderRadius: Radius.xl, padding: 8, flexDirection: 'row', alignItems: 'center' },
   groupImageWrapper: { width: 100, height: 100, borderRadius: Radius.lg, overflow: 'hidden' },
   groupImage: { width: '100%', height: '100%' },
   groupBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(4,23,44,0.8)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
@@ -192,8 +243,10 @@ const styles = StyleSheet.create({
   groupMeta: { marginTop: Spacing.sm },
   metaPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: theme.cardBase, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   metaText: { fontFamily: 'Inter-Bold', fontSize: 11, color: theme.primary },
-
-  ledgerCard: { backgroundColor: theme.cardBase, borderRadius: Radius.xl, paddingVertical: Spacing.sm },
+  ledgerCard: { backgroundColor: theme.cardBase, borderRadius: Radius.xl, padding: Spacing.lg, alignItems: 'center' },
+  comingSoonText: { fontFamily: 'Inter-Medium', fontSize: 13, color: theme.subText, textAlign: 'center' },
+  emptyGroupHint: { padding: Spacing.xl, alignItems: 'center' },
+  emptyHintText: { fontFamily: 'Inter-Medium', fontSize: 14, color: theme.subText },
   entryItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   entryMain: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 2 },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.present, justifyContent: 'center', alignItems: 'center' },
@@ -203,19 +256,18 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 },
   statusText: { fontFamily: 'Inter-Bold', fontSize: 9, color: theme.primary },
   entryTime: { flex: 1, textAlign: 'right', fontFamily: 'Inter-Medium', fontSize: 12, color: theme.subText },
-
   fab: {
     position: 'absolute',
     bottom: 30,
     right: 24,
     width: 64,
     height: 64,
-    borderRadius: 24,
-    backgroundColor: 'rgba(4,23,44,0.9)',
+    borderRadius: Radius.lg,
+    backgroundColor: theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8

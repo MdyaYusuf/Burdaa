@@ -1,3 +1,5 @@
-import OrganizationScreen from '../../src/features/organizations/screens/OrganizationScreen';
+import { OrganizationScreenComponent } from '@/src/features/organizations/screens/OrganizationScreen';
 
-export default OrganizationScreen;
+export default function OrganizationsRoute() {
+  return <OrganizationScreenComponent />;
+}

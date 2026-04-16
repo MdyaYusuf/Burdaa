@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch, useAppSelector } from '../src/core/hooks/useRedux';
-import { setCredentials, logoutUser } from '../src/features/auth/store/authSlice';
+import { setCredentials, logout } from '../src/features/auth/store/authSlice';
 import { clearOrganization } from '../src/features/organizations/store/organizationSlice';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -20,7 +20,7 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: 'index',
+  initialRouteName: '(auth)/index',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -35,12 +35,14 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+
     if (error) {
       throw error;
     }
   }, [error]);
 
   if (!loaded) {
+
     return null;
   }
 
@@ -62,7 +64,6 @@ function RootLayoutNav() {
 
   const theme = Colors[colorScheme ?? 'light'];
 
-  // Session Rehydration
   useEffect(() => {
     async function initializeApp() {
       try {
@@ -72,7 +73,7 @@ function RootLayoutNav() {
         if (accessToken && savedUser) {
           dispatch(setCredentials(JSON.parse(savedUser)));
         } else {
-          dispatch(logoutUser());
+          dispatch(logout());
           dispatch(clearOrganization());
         }
       } catch (e) {
@@ -82,47 +83,46 @@ function RootLayoutNav() {
         await SplashScreen.hideAsync();
       }
     }
-
     initializeApp();
-  }, [dispatch]);
+  }, []);
 
-  // The Executive Watcher: Auth and Organization Guard
   useEffect(() => {
+
     if (!isReady) {
       return;
     }
 
+    const segmentPath = segments.join('/');
     const inAuthGroup = segments[0] === '(auth)';
-    const inOrgSelection = segments.includes('organizations');
-    const isCreatingOrg = segments.includes('create-organization');
-    const atLanding = segments[0] === undefined || segments[0] === '';
+    const inOrgSelection = segmentPath.includes('organizations');
+    const isCreatingOrg = segmentPath.includes('create-organization');
+    const isCreatingGroup = segmentPath.includes('create-group');
+    const atLanding = inAuthGroup && segments.length === 1;
 
-    // Not Logged In Logic
-    if (!isAuthenticated && !inAuthGroup && !atLanding) {
-      router.replace('/' as any);
+    // Auth Guard
+    if (!isAuthenticated) {
+
+      if (!inAuthGroup) {
+        router.replace('/(auth)' as any);
+      }
       return;
     }
 
-    // Logged In but No Organization Picked
-    if (isAuthenticated && !selectedOrganization && !inOrgSelection && !isCreatingOrg) {
-      Toast.show({
-        type: 'info',
-        text1: 'Organizasyon seçiniz.',
-        text2: 'Dashboard yönlendirmesi için lütfen bir organizasyon seçiniz.',
-        position: 'bottom',
-        bottomOffset: 100,
-      });
-      router.replace('/organizations');
+    // Organization Guard
+    if (!selectedOrganization && !inOrgSelection && !isCreatingOrg && !isCreatingGroup) {
+      router.replace('/organizations' as any);
+
       return;
     }
 
-    // Fully Ready => Go to Dashboard
-    if (isAuthenticated && selectedOrganization && (inAuthGroup || atLanding)) {
-      router.replace('/(tabs)');
+    // Success Redirect
+    if (selectedOrganization && (inAuthGroup || atLanding)) {
+      router.replace('/(tabs)' as any);
     }
   }, [isAuthenticated, selectedOrganization, isReady, segments]);
 
   if (!isReady) {
+
     return null;
   }
 
@@ -141,11 +141,22 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={BurdaaTheme}>
       <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+        {/* Organization Creation Modal */}
         <Stack.Screen
           name="create-organization"
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+            animation: 'slide_from_bottom'
+          }}
+        />
+
+        {/* Group Creation Modal */}
+        <Stack.Screen
+          name="create-group"
           options={{
             presentation: 'modal',
             headerShown: false,

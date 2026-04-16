@@ -1,14 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { apiClient } from '../../../core/api/apiClient';
-import { 
-  UserResponseDto, 
-  RegisterUserRequest, 
-  LoginRequest, 
-  TokenResponseDto 
+import {
+  UserResponseDto,
+  RegisterUserRequest,
+  LoginRequest,
+  TokenResponseDto
 } from '../types/Authentication';
 import * as SecureStore from 'expo-secure-store';
 
-// Thunk: Register
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (data: RegisterUserRequest, { rejectWithValue }) => {
@@ -29,7 +28,6 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-// Thunk: Login
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (data: LoginRequest, { rejectWithValue }) => {
@@ -50,7 +48,6 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// Thunk: Logout
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
@@ -80,17 +77,24 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Used for auto login and hydration when the app starts
     setCredentials: (state, action: PayloadAction<UserResponseDto>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.error = null;
+    },
+    logout: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      state.isLoading = false;
     }
   },
   extraReducers: (builder) => {
     builder
-      // Register
-      .addCase(registerUser.pending, (state) => { state.isLoading = true; state.error = null; })
+      .addCase(registerUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
@@ -100,8 +104,10 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Login
-      .addCase(loginUser.pending, (state) => { state.isLoading = true; state.error = null; })
+      .addCase(loginUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
@@ -111,14 +117,17 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Logout
+      .addCase(logoutUser.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
         state.error = null;
+        state.isLoading = false;
       });
   },
 });
 
-export const { setCredentials } = authSlice.actions;
+export const { setCredentials, logout } = authSlice.actions;
 export default authSlice.reducer;
