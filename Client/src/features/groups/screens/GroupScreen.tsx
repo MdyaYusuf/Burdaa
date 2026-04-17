@@ -7,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
-  InteractionManager,
+  Image,
   useColorScheme
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +29,8 @@ export function GroupScreenComponent() {
   const { groups, isLoading } = useAppSelector((state) => state.groups);
   const [searchQuery, setSearchQuery] = useState('');
   const [isReady, setIsReady] = useState(false);
+
+  const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   useFocusEffect(
     useCallback(() => {
@@ -134,20 +136,17 @@ export function GroupScreenComponent() {
               activeOpacity={0.8}
               onPress={() => router.push(`/groups/${group.id}` as any)}
             >
-              <View style={styles.cardHeader}>
-                <View style={styles.nameBlock}>
-                  <Text
-                    style={[styles.groupName, { color: theme.primary }]}
-                    numberOfLines={2}
-                  >
-                    {group.name}
-                  </Text>
-                  <View style={styles.memberCountRow}>
-                    <MaterialCommunityIcons name="account-multiple" size={16} color={theme.subText} />
-                    <Text style={[styles.memberCountText, { color: theme.subText }]}>
-                      {group.totalMembers} Members
-                    </Text>
-                  </View>
+              <View style={styles.cardTopRow}>
+                <View style={[styles.logoContainer, { backgroundColor: theme.tonalLayerLow }]}>
+                  {selectedOrganization?.logoUrl ? (
+                    <Image
+                      source={{ uri: `${IMAGE_BASE_URL}${selectedOrganization.logoUrl}` }}
+                      style={styles.logoImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons name="shield-outline" size={24} color={theme.subText} />
+                  )}
                 </View>
 
                 <View style={styles.rollcallInfo}>
@@ -158,6 +157,21 @@ export function GroupScreenComponent() {
                     group.totalRollcalls === 0 && { color: '#ba1a1a' }
                   ]}>
                     {group.totalRollcalls}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.nameSection}>
+                <Text
+                  style={[styles.groupName, { color: theme.primary }]}
+                  numberOfLines={1}
+                >
+                  {group.name}
+                </Text>
+                <View style={styles.memberCountRow}>
+                  <MaterialCommunityIcons name="account-multiple" size={16} color={theme.subText} />
+                  <Text style={[styles.memberCountText, { color: theme.subText }]}>
+                    {group.totalMembers} Members
                   </Text>
                 </View>
               </View>
@@ -193,6 +207,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 120,
+  },
+  listContainer: {
+    gap: Spacing.md,
+  },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -211,6 +233,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flex: 1,
   },
+  ledgerLabel: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+  },
+  ledgerTitle: {
+    fontFamily: 'Manrope-ExtraBold',
+    fontSize: 32,
+    marginTop: -2,
+  },
+
   searchRow: {
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
@@ -231,23 +264,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 15,
   },
-  ledgerLabel: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 10,
-    letterSpacing: 1.5,
-  },
-  ledgerTitle: {
-    fontFamily: 'Manrope-ExtraBold',
-    fontSize: 32,
-    marginTop: -2,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 120,
-  },
-  listContainer: {
-    gap: Spacing.md,
-  },
+
   groupCard: {
     borderRadius: Radius.xl,
     padding: Spacing.lg,
@@ -259,33 +276,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
   },
-  cardHeader: {
+
+  cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.xl,
-  },
-  nameBlock: {
-    flex: 1,
-    marginRight: 12,
-  },
-  groupName: {
-    fontFamily: 'Manrope-Bold',
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  memberCountRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
+    marginBottom: Spacing.md,
   },
-  memberCountText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
+  logoContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   rollcallInfo: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   rollcallLabel: {
     fontFamily: 'Inter-Bold',
@@ -297,6 +309,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 2,
   },
+
+  nameSection: {
+    marginBottom: Spacing.xl,
+  },
+  nameBlock: {
+    flex: 1,
+    marginRight: 12,
+  },
+  groupName: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  memberCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  memberCountText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -320,6 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textTransform: 'uppercase',
   },
+
   fab: {
     position: 'absolute',
     bottom: 32,

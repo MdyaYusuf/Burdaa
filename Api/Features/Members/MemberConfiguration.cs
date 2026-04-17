@@ -18,6 +18,8 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
     builder.Property(m => m.FirstName).HasMaxLength(100).IsRequired();
     builder.Property(m => m.LastName).HasMaxLength(100).IsRequired();
     builder.Property(m => m.ExternalId).HasMaxLength(50).IsRequired(false);
+    builder.Property(m => m.BirthDate).IsRequired(false);
+    builder.Property(m => m.ProfileImageUrl).HasMaxLength(500).IsRequired(false);
     builder.Property(m => m.IsActive).HasDefaultValue(true);
 
     builder.HasOne(m => m.Group)

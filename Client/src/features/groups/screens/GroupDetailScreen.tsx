@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
+  Image,
   useColorScheme
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,10 +18,13 @@ import { useAppDispatch, useAppSelector } from '@/src/core/hooks/useRedux';
 import { fetchMembers } from '@/src/features/members/store/memberSlice';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
+import { calculateAge } from '@/src/core/utils/dateUtils';
 
 interface Props {
   groupId: string;
 }
+
+const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 export function GroupDetailScreen({ groupId }: Props) {
   const router = useRouter();
@@ -50,6 +54,13 @@ export function GroupDetailScreen({ groupId }: Props) {
     m.groupId === groupId &&
     `${m.firstName} ${m.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+  const growthCount = filteredMembers.filter(m =>
+    m.createdDate && new Date(m.createdDate) >= oneWeekAgo
+  ).length;
 
   const handleAddMemberPress = () => {
     router.push({ pathname: '/create-member', params: { groupId } } as any);
@@ -85,7 +96,7 @@ export function GroupDetailScreen({ groupId }: Props) {
           />
         }
       >
-        {/* Search Bar with Tune Icon */}
+        {/* Search Bar */}
         <View style={[styles.searchRow, { backgroundColor: theme.tonalLayerLow }]}>
           <MaterialCommunityIcons name="magnify" size={22} color={theme.subText} />
           <TextInput
@@ -106,7 +117,7 @@ export function GroupDetailScreen({ groupId }: Props) {
             <Text style={styles.statLabelLight}>TOTAL MEMBERS</Text>
             <View style={styles.statNumberRow}>
               <Text style={styles.displayNumber}>{filteredMembers.length}</Text>
-              <Text style={styles.statGrowth}>+0 this week</Text>
+              <Text style={styles.statGrowth}>+{growthCount} this week</Text>
             </View>
           </View>
 
@@ -145,36 +156,67 @@ export function GroupDetailScreen({ groupId }: Props) {
             </View>
           ) : (
             <View style={[styles.listCard, { backgroundColor: theme.cardBase }]}>
-              {filteredMembers.map((member) => (
-                <TouchableOpacity
-                  key={member.id}
-                  style={styles.memberRow}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.memberInfo}>
-                    <View style={[styles.avatar, { backgroundColor: theme.present }]}>
-                      <Text style={[styles.avatarText, { color: theme.primary }]}>
-                        {member.firstName[0]}{member.lastName[0]}
-                      </Text>
+              {filteredMembers.map((member) => {
+                const ageDisplay = calculateAge(member.birthDate);
+
+                return (
+                  <TouchableOpacity
+                    key={member.id}
+                    style={styles.memberRow}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.memberInfo}>
+                      <View style={[styles.avatar, { backgroundColor: theme.present }]}>
+                        {member.profileImageUrl ? (
+                          <Image
+                            source={{ uri: `${IMAGE_BASE_URL}${member.profileImageUrl}` }}
+                            style={styles.avatarImage}
+                          />
+                        ) : (
+                          <Text style={[styles.avatarText, { color: theme.primary }]}>
+                            {member.firstName?.[0] || ''}{member.lastName?.[0] || ''}
+                          </Text>
+                        )}
+                      </View>
+
+                      <View>
+                        <Text style={[styles.memberName, { color: theme.primary }]}>
+                          {member.firstName} {member.lastName}
+                        </Text>
+
+                        <Text style={[styles.memberRole, { color: theme.accent }]}>
+                          {member.externalId || 'ID Pending'}
+                        </Text>
+                      </View>
                     </View>
-                    <View>
-                      <Text style={[styles.memberName, { color: theme.primary }]}>
-                        {member.firstName} {member.lastName}
-                      </Text>
-                      <Text style={[styles.memberRole, { color: theme.subText }]}>
-                        {member.externalId || 'ID Pending'}
-                      </Text>
+
+                    <View style={styles.rightLedger}>
+                      {ageDisplay && (
+                        <View
+                          style={[
+                            styles.ageBadge,
+                            {
+                              backgroundColor: '#e8f5e9',
+                              borderColor: '#c8e6c9',
+                              borderWidth: 1
+                            }
+                          ]}
+                        >
+                          <Text style={[styles.ageText, { color: '#2e7d32' }]}>
+                            {ageDisplay}
+                          </Text>
+                        </View>
+                      )}
+                      <MaterialCommunityIcons name="chevron-right" size={24} color={theme.outline} />
                     </View>
-                  </View>
-                  <MaterialCommunityIcons name="chevron-right" size={24} color={theme.outline} />
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.primary }]}
         onPress={handleAddMemberPress}
@@ -187,7 +229,7 @@ export function GroupDetailScreen({ groupId }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
   },
   header: {
     flexDirection: 'row',
@@ -236,7 +278,7 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.sm,
   },
   filterButton: {
-    padding: Spacing.xs,
+    padding: Spacing.xs
   },
   statsGrid: {
     gap: Spacing.md,
@@ -331,6 +373,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
+    flex: 1,
+  },
+  rightLedger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ageBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  ageText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 12,
   },
   avatar: {
     width: 56,
@@ -338,6 +395,11 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontFamily: 'Manrope-Bold',

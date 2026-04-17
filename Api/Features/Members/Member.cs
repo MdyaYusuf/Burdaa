@@ -19,6 +19,8 @@ public class Member : Entity<Guid>
   public required string FirstName { get; set; }
   public required string LastName { get; set; }
   public string? ExternalId { get; set; }
+  public string? ProfileImageUrl { get; set; }
+  public DateTime? BirthDate { get; set; }
   public bool IsActive { get; set; } = true;
 
   // Navigation properties

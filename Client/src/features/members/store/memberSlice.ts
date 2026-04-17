@@ -1,5 +1,10 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { MemberResponseDto, CreateMemberRequest } from '../types/Member';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import {
+  MemberResponseDto,
+  CreateMemberRequest,
+  UpdateMemberRequest,
+  CreatedMemberResponseDto
+} from '../types/Member';
 import { memberService } from '../services/memberService';
 
 interface MemberState {
@@ -14,8 +19,8 @@ const initialState: MemberState = {
   error: null,
 };
 
-// Thunk: Fetch all members for the active roster
-export const fetchMembers = createAsyncThunk(
+// Fetch Thunk
+export const fetchMembers = createAsyncThunk<MemberResponseDto[], void, { rejectValue: string }>(
   'members/fetchAll',
   async (_, { rejectWithValue }) => {
     const response = await memberService.getAll();
@@ -28,16 +33,66 @@ export const fetchMembers = createAsyncThunk(
   }
 );
 
-// Thunk: Register a new member to a group
-export const createMember = createAsyncThunk(
+// Create Thunk
+export const createMember = createAsyncThunk<CreatedMemberResponseDto, CreateMemberRequest, { rejectValue: string }>(
   'members/create',
-  async (data: CreateMemberRequest, { dispatch, rejectWithValue }) => {
-    const response = await memberService.create(data);
+  async (data, { dispatch, rejectWithValue }) => {
+    const formData = new FormData();
+    formData.append('firstName', data.firstName);
+    formData.append('lastName', data.lastName);
+    formData.append('groupId', data.groupId);
 
-    if (response.success) {
-      dispatch(fetchMembers()); // Refresh the roster automatically
+    if (data.externalId) {
+      formData.append('externalId', data.externalId);
+    }
+
+    if (data.birthDate) {
+      formData.append('birthDate', data.birthDate);
+    }
+
+    if (data.profileImage) {
+      formData.append('profileImage', data.profileImage as any);
+    }
+
+    const response = await memberService.create(formData);
+
+    if (response.success && response.data) {
+      dispatch(fetchMembers());
 
       return response.data;
+    }
+    return rejectWithValue(response.message);
+  }
+);
+
+// Update Thunk
+export const updateMember = createAsyncThunk<void, UpdateMemberRequest, { rejectValue: string }>(
+  'members/update',
+  async (data, { dispatch, rejectWithValue }) => {
+    const formData = new FormData();
+    formData.append('id', data.id);
+    formData.append('firstName', data.firstName);
+    formData.append('lastName', data.lastName);
+    formData.append('isActive', String(data.isActive));
+
+    if (data.externalId) {
+      formData.append('externalId', data.externalId);
+    }
+
+    if (data.birthDate) {
+      formData.append('birthDate', data.birthDate);
+    }
+
+    if (data.profileImage) {
+      formData.append('profileImage', data.profileImage as any);
+    }
+
+    const response = await memberService.update(formData);
+
+    if (response.success) {
+      dispatch(fetchMembers());
+
+      return;
     }
     return rejectWithValue(response.message);
   }
@@ -53,7 +108,6 @@ const memberSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Members Cases
       .addCase(fetchMembers.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -64,21 +118,29 @@ const memberSlice = createSlice({
       })
       .addCase(fetchMembers.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload ?? 'Failed to fetch members';
       })
-
-      // Create Member Cases
-      .addCase(createMember.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(createMember.fulfilled, (state) => {
-        state.isLoading = false;
-      })
-      .addCase(createMember.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+      .addMatcher(
+        (action) => action.type.endsWith('/pending') && (action.type.includes('create') || action.type.includes('update')),
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith('/fulfilled') && (action.type.includes('create') || action.type.includes('update')),
+        (state) => {
+          state.isLoading = false;
+        }
+      )
+      .addMatcher(
+        (action): action is PayloadAction<string> =>
+          action.type.endsWith('/rejected') && (action.type.includes('create') || action.type.includes('update')),
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.payload;
+        }
+      );
   },
 });
 

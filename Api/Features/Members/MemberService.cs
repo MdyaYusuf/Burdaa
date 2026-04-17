@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Api.Core.Helpers;
 using Api.Core.Repositories;
 using Api.Core.Responses;
 using FluentValidation;
@@ -128,6 +129,15 @@ public class MemberService(
 
     Member member = _mapper.CreateToEntity(request);
 
+    if (request.ProfileImage != null)
+    {
+      member.ProfileImageUrl = await FileHelper.SaveImageToDisk(
+        request.ProfileImage,
+        "members",
+        $"{member.FirstName}-{member.LastName}",
+        cancellationToken);
+    }
+
     await _memberRepository.AddAsync(member, cancellationToken);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -158,8 +168,14 @@ public class MemberService(
     Member member = await _businessRules.GetMemberIfExistAsync(request.Id, enableTracking: true, cancellationToken: cancellationToken);
 
     await _businessRules.UserMustHavePermissionToManageMember(member.GroupId, currentUserId, userRole);
-
     await _businessRules.MemberExternalIdMustBeUniqueInGroupAsync(request.ExternalId, member.GroupId, member.Id, cancellationToken);
+
+    member.ProfileImageUrl = await FileHelper.ReplaceImageOnDisk(
+      request.ProfileImage,
+      member.ProfileImageUrl,
+      "members",
+      $"{request.FirstName}-{request.LastName}",
+      cancellationToken);
 
     _mapper.UpdateEntityFromRequest(request, member);
 

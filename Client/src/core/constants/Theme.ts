@@ -3,15 +3,17 @@ export const Palette = {
   primary: '#04172c',
   primaryContainer: '#1a2c42',
   onPrimary: '#ffffff',
-  
+
   surface: '#f8f9fc',
-  surfaceContainerLow: '#f2f4f6', 
+  surfaceContainerLow: '#f2f4f6',
   surfaceContainerLowest: '#ffffff',
   surfaceContainerHigh: '#e7e8eb',
-  
+
   onSurface: '#191c1e',
   onSurfaceVariant: '#44474d',
-  
+
+  amberDark: '#8a5e00',
+
   present: '#d3e4ff', // Soft sky blue for successful attendance
   late: '#ffddb2',    // Warm amber for delayed attendance
   absent: '#ffdad6',  // Soft coral for missing members
@@ -29,8 +31,9 @@ export const Colors = {
     tonalLayerLow: Palette.surfaceContainerLow,
     surfaceContainerHigh: '#e7e8eb',
     primary: Palette.primary,
-    primaryContainer: Palette.primaryContainer, 
+    primaryContainer: Palette.primaryContainer,
     onPrimary: Palette.onPrimary,
+    accent: Palette.amberDark,
     present: Palette.present,
     late: Palette.late,
     absent: Palette.absent,
@@ -47,6 +50,7 @@ export const Colors = {
     primary: '#d0e4ff',
     primaryContainer: Palette.primaryContainer,
     onPrimary: '#000000',
+    accent: '#ffb951',
     present: Palette.present,
     late: Palette.late,
     absent: Palette.absent,

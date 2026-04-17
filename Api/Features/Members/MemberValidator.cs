@@ -17,8 +17,11 @@ public class CreateMemberRequestValidator : AbstractValidator<CreateMemberReques
     RuleFor(m => m.ExternalId)
       .MaximumLength(100).WithMessage("Harici ID en fazla 100 karakter olabilir.");
 
+    RuleFor(m => m.BirthDate)
+      .LessThan(m => DateTime.Now).WithMessage("Doğum tarihi bugünden büyük olamaz.");
+
     RuleFor(m => m.GroupId)
-      .NotEmpty().WithMessage("Üyenin bir gruba atanması zorunlidir.");
+      .NotEmpty().WithMessage("Üyenin bir gruba atanması zorunludur.");
   }
 }
 
@@ -39,5 +42,8 @@ public class UpdateMemberRequestValidator : AbstractValidator<UpdateMemberReques
 
     RuleFor(m => m.ExternalId)
       .MaximumLength(100).WithMessage("Harici ID en fazla 100 karakter olabilir.");
+
+    RuleFor(m => m.BirthDate)
+    .LessThan(DateTime.Now).WithMessage("Doğum tarihi bugünden büyük olamaz.");
   }
 }

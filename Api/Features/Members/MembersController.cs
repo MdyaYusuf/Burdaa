@@ -33,7 +33,7 @@ public class MembersController(IMemberService _memberService) : CustomBaseContro
   }
 
   [HttpPost]
-  public async Task<IActionResult> Add([FromBody] CreateMemberRequest request, CancellationToken cancellationToken)
+  public async Task<IActionResult> Add([FromForm] CreateMemberRequest request, CancellationToken cancellationToken)
   {
     var result = await _memberService.AddAsync(
       request: request,
@@ -45,7 +45,7 @@ public class MembersController(IMemberService _memberService) : CustomBaseContro
   }
 
   [HttpPut]
-  public async Task<IActionResult> Update([FromBody] UpdateMemberRequest request, CancellationToken cancellationToken)
+  public async Task<IActionResult> Update([FromForm] UpdateMemberRequest request, CancellationToken cancellationToken)
   {
     var result = await _memberService.UpdateAsync(
       request: request,
