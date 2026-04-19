@@ -12,10 +12,15 @@ public class RollcallEntry : Entity<Guid>
 
   }
 
+  public RollcallEntry(Guid id) : base(id)
+  {
+
+  }
+
   public Guid RollcallId { get; set; }
   public virtual Rollcall Rollcall { get; set; } = default!;
   public Guid MemberId { get; set; }
   public virtual Member Member { get; set; } = default!;
-  public bool IsPresent { get; set; }
+  public AttendanceStatus Status { get; set; }
   public string? Note { get; set; }
 }

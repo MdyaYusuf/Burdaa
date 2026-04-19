@@ -17,6 +17,8 @@ public class Rollcall : Entity<Guid>
   public required string Title { get; set; }
   public string? Description { get; set; }
   public DateTime Date { get; set; }
+  public TimeSpan? StartTime { get; set; }
+  public TimeSpan? EndTime { get; set; }
 
   // Navigation properties
   public Guid GroupId { get; set; }

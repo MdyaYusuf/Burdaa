@@ -71,6 +71,14 @@ public class RollcallBusinessRules(
     }
   }
 
+  public void EndTimeMustBeAfterStartTime(TimeSpan? startTime, TimeSpan? endTime)
+  {
+    if (startTime.HasValue && endTime.HasValue && endTime <= startTime)
+    {
+      throw new BusinessException("Bitiş saati, başlangıç saatinden sonra olmalıdır.");
+    }
+  }
+
   public async Task RollcallTitleMustBeUniqueForGroupOnDateAsync(
     string title,
     Guid groupId,

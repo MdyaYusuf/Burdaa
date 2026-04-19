@@ -34,6 +34,12 @@ public class RollcallConfiguration : IEntityTypeConfiguration<Rollcall>
     builder.Property(r => r.Date)
       .IsRequired();
 
+    builder.Property(r => r.StartTime)
+      .IsRequired(false);
+
+    builder.Property(r => r.EndTime)
+      .IsRequired(false);
+
     builder.HasOne(r => r.Group)
       .WithMany(g => g.Rollcalls)
       .HasForeignKey(r => r.GroupId)

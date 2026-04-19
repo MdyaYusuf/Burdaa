@@ -33,6 +33,9 @@ public class CreateRollcallEntryDtoValidator : AbstractValidator<CreateRollcallE
     RuleFor(e => e.MemberId)
       .NotEmpty().WithMessage("Üye seçimi zorunludur.");
 
+    RuleFor(e => e.Status)
+      .IsInEnum().WithMessage("Geçersiz yoklama durumu.");
+
     RuleFor(e => e.Note)
       .MaximumLength(500).WithMessage("Not en fazla 500 karakter olabilir.");
   }
@@ -68,6 +71,9 @@ public class UpdateRollcallEntryDtoValidator : AbstractValidator<UpdateRollcallE
   {
     RuleFor(e => e.MemberId)
       .NotEmpty().WithMessage("Üye seçimi zorunludur.");
+
+    RuleFor(e => e.Status)
+      .IsInEnum().WithMessage("Geçersiz yoklama durumu.");
 
     RuleFor(e => e.Note)
       .MaximumLength(500).WithMessage("Not en fazla 500 karakter olabilir.");

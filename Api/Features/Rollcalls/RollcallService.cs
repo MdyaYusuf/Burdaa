@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using Api.Features.Members;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace Api.Features.Rollcalls;
 
 public class RollcallService(
   IRollcallRepository _rollcallRepository,
+  IMemberRepository _memberRepository,
   RollcallMapper _mapper,
   RollcallBusinessRules _businessRules,
   IUnitOfWork _unitOfWork,
@@ -123,6 +125,7 @@ public class RollcallService(
 
     await _businessRules.UserMustHavePermissionToManageRollcall(request.GroupId, currentUserId, userRole);
     _businessRules.RollcallDateCannotBeInFuture(request.Date);
+    _businessRules.EndTimeMustBeAfterStartTime(request.StartTime, request.EndTime);
     await _businessRules.RollcallTitleMustBeUniqueForGroupOnDateAsync(request.Title, request.GroupId, request.Date, cancellationToken: cancellationToken);
 
     List<Guid> memberIds = request.Entries.Select(e => e.MemberId).ToList();
@@ -165,7 +168,13 @@ public class RollcallService(
 
     await _businessRules.UserMustHavePermissionToManageRollcall(rollcall.GroupId, currentUserId, userRole);
     _businessRules.RollcallDateCannotBeInFuture(request.Date);
-    await _businessRules.RollcallTitleMustBeUniqueForGroupOnDateAsync(request.Title, rollcall.GroupId, request.Date, rollcall.Id, cancellationToken);
+    _businessRules.EndTimeMustBeAfterStartTime(request.StartTime, request.EndTime);
+    await _businessRules.RollcallTitleMustBeUniqueForGroupOnDateAsync(
+      request.Title,
+      rollcall.GroupId,
+      request.Date,
+      rollcall.Id,
+      cancellationToken);
 
     List<Guid> memberIds = request.Entries.Select(e => e.MemberId).ToList();
     await _businessRules.AllMembersMustBelongToGroupAsync(rollcall.GroupId, memberIds, cancellationToken);
@@ -182,19 +191,22 @@ public class RollcallService(
     foreach (UpdateRollcallEntryDto entryDto in request.Entries)
     {
       RollcallEntry? existingEntry = rollcall.Entries.FirstOrDefault(e => e.Id == entryDto.Id);
+
       if (existingEntry != null)
       {
-        existingEntry.IsPresent = entryDto.IsPresent;
+        existingEntry.Status = entryDto.Status;
         existingEntry.Note = entryDto.Note;
       }
       else
       {
-        rollcall.Entries.Add(new RollcallEntry
+        var newEntry = new RollcallEntry(Guid.NewGuid())
         {
           MemberId = entryDto.MemberId,
-          IsPresent = entryDto.IsPresent,
+          Status = entryDto.Status,
           Note = entryDto.Note
-        });
+        };
+
+        rollcall.Entries.Add(newEntry);
       }
     }
 
@@ -232,6 +244,70 @@ public class RollcallService(
     {
       Success = true,
       Message = "Yoklama kaydı başarılı bir şekilde silindi.",
+      StatusCode = 200
+    };
+  }
+
+  public async Task<ReturnModel<List<RollcallPreviewDto>>> GetPreviewsAsync(
+    Guid currentUserId,
+    string userRole,
+    CancellationToken cancellationToken = default)
+  {
+    var rollcalls = await _rollcallRepository.GetAllAsync(
+      filter: userRole == "Admin" ? null : x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId,
+      include: q => q.Include(r => r.Entries),
+      orderBy: q => q.OrderByDescending(r => r.Date),
+      cancellationToken: cancellationToken);
+
+    var responseDtos = _mapper.EntityToPreviewDtoList(rollcalls);
+
+    foreach (var dto in responseDtos)
+    {
+      var entity = rollcalls.First(x => x.Id == dto.Id);
+
+      dto.TotalPresent = entity.Entries.Count(e => e.Status == AttendanceStatus.Present);
+      dto.TotalAbsent = entity.Entries.Count(e => e.Status == AttendanceStatus.Absent);
+      dto.TotalLate = entity.Entries.Count(e => e.Status == AttendanceStatus.Late);
+    }
+
+    return new ReturnModel<List<RollcallPreviewDto>>
+    {
+      Success = true,
+      Message = "Yoklama özetleri başarıyla getirildi.",
+      Data = responseDtos,
+      StatusCode = 200
+    };
+  }
+
+  public async Task<ReturnModel<RollcallResponseDto>> GetRollcallTemplateAsync(
+      Guid groupId,
+      Guid currentUserId,
+      string userRole,
+      CancellationToken cancellationToken = default)
+  {
+    await _businessRules.UserMustHavePermissionToManageRollcall(groupId, currentUserId, userRole);
+
+    var members = await _memberRepository.GetAllAsync(
+      filter: m => m.GroupId == groupId && m.IsActive,
+      cancellationToken: cancellationToken);
+
+    var template = new RollcallResponseDto
+    {
+      Date = DateTime.UtcNow,
+      GroupId = groupId,
+      Entries = members.Select(m => new RollcallEntryResponseDto
+      {
+        MemberId = m.Id,
+        MemberFirstName = m.FirstName,
+        MemberLastName = m.LastName,
+        Status = AttendanceStatus.Present
+      }).ToList()
+    };
+
+    return new ReturnModel<RollcallResponseDto>
+    {
+      Success = true,
+      Data = template,
       StatusCode = 200
     };
   }

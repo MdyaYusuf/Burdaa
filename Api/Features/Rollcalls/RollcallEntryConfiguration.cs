@@ -23,9 +23,11 @@ public class RollcallEntryConfiguration : IEntityTypeConfiguration<RollcallEntry
       .HasColumnName("UpdatedDate")
       .IsRequired(false);
 
-    builder.Property(re => re.IsPresent)
+    builder.Property(re => re.Status)
+      .HasConversion<int>()
       .IsRequired()
-      .HasDefaultValue(false);
+      .HasDefaultValue(AttendanceStatus.Present)
+      .HasSentinel(0);
 
     builder.Property(re => re.Note)
       .HasMaxLength(250)
