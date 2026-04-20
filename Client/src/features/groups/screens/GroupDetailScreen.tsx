@@ -13,12 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/src/core/constants/Theme';
+import { Colors, Spacing, Radius, Palette } from '@/src/core/constants/Theme';
 import { useAppDispatch, useAppSelector } from '@/src/core/hooks/useRedux';
 import { fetchMembers } from '@/src/features/members/store/memberSlice';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { calculateAge } from '@/src/core/utils/dateUtils';
+import { startNewRollcallSession } from '@/src/features/rollcalls/store/rollcallSlice';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Props {
   groupId: string;
@@ -64,6 +66,14 @@ export function GroupDetailScreen({ groupId }: Props) {
 
   const handleAddMemberPress = () => {
     router.push({ pathname: '/create-member', params: { groupId } } as any);
+  };
+
+  const handleTakeRollcall = async () => {
+    const result = await dispatch(startNewRollcallSession(groupId));
+
+    if (startNewRollcallSession.fulfilled.match(result)) {
+      router.push('/rollcalls/live');
+    }
   };
 
   return (
@@ -134,6 +144,39 @@ export function GroupDetailScreen({ groupId }: Props) {
             </View>
           </View>
         </View>
+
+        <TouchableOpacity
+          onPress={handleTakeRollcall}
+          activeOpacity={0.9}
+          style={styles.rollcallActionContainer}
+        >
+          <LinearGradient
+            colors={['#36485f', theme.primaryContainer]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.rollcallGradient}
+          >
+            <View style={styles.internalGlow} />
+
+            <View style={styles.buttonContent}>
+              <View style={styles.iconPulseContainer}>
+                <MaterialCommunityIcons name="remote-tv" size={24} color={theme.onPrimary} />
+                <View style={[styles.pulseDot, { backgroundColor: theme.accent }]} />
+              </View>
+
+              <View style={styles.textContainer}>
+                <Text style={[styles.rollcallText, { color: theme.onPrimary }]}>
+                  TAKE A ROLLCALL
+                </Text>
+                <Text style={[styles.rollcallSubtext, { color: 'rgba(255,255,255,0.6)' }]}>
+                  INITIALIZE LIVE SESSION
+                </Text>
+              </View>
+
+              <MaterialCommunityIcons name="chevron-right" size={24} color={theme.onPrimary} />
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* Dynamic Roster Ledger */}
         <View style={[styles.listWrapper, { backgroundColor: theme.tonalLayerLow }]}>
@@ -426,5 +469,70 @@ const styles = StyleSheet.create({
     elevation: 8,
     shadowOpacity: 0.3,
     shadowRadius: 20,
+  },
+  rollcallActionContainer: {
+    marginVertical: Spacing.md,
+    borderRadius: Radius.xl,
+    shadowColor: Palette.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  rollcallGradient: {
+    padding: Spacing.lg,
+    borderRadius: Radius.xl,
+    overflow: 'hidden',
+    height: 88,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  internalGlow: {
+    position: 'absolute',
+    top: -30,
+    right: -60,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconPulseContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#1a2c42',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  rollcallText: {
+    fontFamily: 'Manrope-ExtraBold',
+    fontSize: 17,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  rollcallSubtext: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginTop: 2,
   },
 });

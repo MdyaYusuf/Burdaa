@@ -280,10 +280,10 @@ public class RollcallService(
   }
 
   public async Task<ReturnModel<RollcallResponseDto>> GetRollcallTemplateAsync(
-      Guid groupId,
-      Guid currentUserId,
-      string userRole,
-      CancellationToken cancellationToken = default)
+    Guid groupId,
+    Guid currentUserId,
+    string userRole,
+    CancellationToken cancellationToken = default)
   {
     await _businessRules.UserMustHavePermissionToManageRollcall(groupId, currentUserId, userRole);
 
@@ -298,9 +298,11 @@ public class RollcallService(
       Entries = members.Select(m => new RollcallEntryResponseDto
       {
         MemberId = m.Id,
+        ExternalId = m.ExternalId,
         MemberFirstName = m.FirstName,
         MemberLastName = m.LastName,
-        Status = AttendanceStatus.Present
+        ProfileImageUrl = m.ProfileImageUrl,
+        Status = AttendanceStatus.None
       }).ToList()
     };
 

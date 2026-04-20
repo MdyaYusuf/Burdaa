@@ -51,10 +51,12 @@ public class RollcallEntryResponseDto
 {
   public Guid Id { get; set; }
   public Guid MemberId { get; set; }
+  public string? ExternalId { get; set; }
   public string MemberFirstName { get; set; } = null!;
   public string MemberLastName { get; set; } = null!;
   public AttendanceStatus Status { get; set; }
   public string? Note { get; set; }
+  public string? ProfileImageUrl { get; set; }
 }
 
 public sealed record CreatedRollcallResponseDto(

@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
   listContainer: {
     gap: Spacing.md,
   },
-
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -243,7 +242,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginTop: -2,
   },
-
   searchRow: {
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
@@ -264,7 +262,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 15,
   },
-
   groupCard: {
     borderRadius: Radius.xl,
     padding: Spacing.lg,
@@ -276,7 +273,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
   },
-
   cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -309,7 +305,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 2,
   },
-
   nameSection: {
     marginBottom: Spacing.xl,
   },
@@ -332,7 +327,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 14,
   },
-
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -356,7 +350,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textTransform: 'uppercase',
   },
-
   fab: {
     position: 'absolute',
     bottom: 32,

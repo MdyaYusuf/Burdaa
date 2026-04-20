@@ -173,6 +173,8 @@ function RootLayoutNav() {
             animation: 'slide_from_bottom'
           }}
         />
+
+        <Stack.Screen name="rollcalls" options={{ headerShown: false }} />
       </Stack>
       <Toast />
     </ThemeProvider>

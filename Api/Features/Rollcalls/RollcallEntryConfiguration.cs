@@ -26,8 +26,8 @@ public class RollcallEntryConfiguration : IEntityTypeConfiguration<RollcallEntry
     builder.Property(re => re.Status)
       .HasConversion<int>()
       .IsRequired()
-      .HasDefaultValue(AttendanceStatus.Present)
-      .HasSentinel(0);
+      .HasDefaultValue(AttendanceStatus.None)
+      .HasSentinel(AttendanceStatus.None);
 
     builder.Property(re => re.Note)
       .HasMaxLength(250)

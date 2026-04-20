@@ -47,6 +47,7 @@ export const Colors = {
     tabIconSelected: '#ffffff',
     cardBase: '#1a1c1e',
     tonalLayerLow: '#252a2e',
+    surfaceContainerHigh: '#2b2f33',
     primary: '#d0e4ff',
     primaryContainer: Palette.primaryContainer,
     onPrimary: '#000000',

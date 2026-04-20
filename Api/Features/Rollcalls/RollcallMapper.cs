@@ -18,6 +18,8 @@ public partial class RollcallMapper
 
   [MapProperty("Member.FirstName", "MemberFirstName")]
   [MapProperty("Member.LastName", "MemberLastName")]
+  [MapProperty("Member.ProfileImageUrl", "ProfileImageUrl")]
+  [MapProperty("Member.ExternalId", "ExternalId")]
   private partial RollcallEntryResponseDto EntryToEntryResponseDto(RollcallEntry entry);
 
   public partial List<RollcallResponseDto> EntityToResponseDtoList(List<Rollcall> entities);
