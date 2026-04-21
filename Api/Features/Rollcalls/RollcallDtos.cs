@@ -67,6 +67,7 @@ public sealed record RollcallPreviewDto
 {
   public Guid Id { get; init; }
   public required string Title { get; init; }
+  public required string GroupName { get; init; }
   public DateTime Date { get; init; }
   public int TotalPresent { get; set; }
   public int TotalAbsent { get; set; }

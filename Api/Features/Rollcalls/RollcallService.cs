@@ -255,7 +255,7 @@ public class RollcallService(
   {
     var rollcalls = await _rollcallRepository.GetAllAsync(
       filter: userRole == "Admin" ? null : x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId,
-      include: q => q.Include(r => r.Entries),
+      include: q => q.Include(r => r.Group).Include(r => r.Entries),
       orderBy: q => q.OrderByDescending(r => r.Date),
       cancellationToken: cancellationToken);
 

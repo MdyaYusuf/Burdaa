@@ -70,6 +70,7 @@ export interface CreatedRollcallResponseDto {
 export interface RollcallPreviewDto {
   id: string;
   title: string;
+  groupName: string;
   date: string;
   totalPresent: number;
   totalAbsent: number;

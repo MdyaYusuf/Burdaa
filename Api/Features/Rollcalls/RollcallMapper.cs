@@ -26,6 +26,7 @@ public partial class RollcallMapper
 
   public partial CreatedRollcallResponseDto EntityToCreatedResponseDto(Rollcall entity);
 
+  [MapProperty("Group.Name", "GroupName")]
   [MapperIgnoreTarget(nameof(RollcallPreviewDto.TotalPresent))]
   [MapperIgnoreTarget(nameof(RollcallPreviewDto.TotalAbsent))]
   [MapperIgnoreTarget(nameof(RollcallPreviewDto.TotalLate))]

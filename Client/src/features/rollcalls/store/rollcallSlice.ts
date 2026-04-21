@@ -81,6 +81,16 @@ const rollcallSlice = createSlice({
         }
       }
     },
+    updateSessionMetadata: (state, action: PayloadAction<{ title?: string, description?: string }>) => {
+      if (state.activeRollcall) {
+        if (action.payload.title !== undefined) {
+          state.activeRollcall.title = action.payload.title;
+        }
+        if (action.payload.description !== undefined) {
+          state.activeRollcall.description = action.payload.description;
+        }
+      }
+    },
     updateSessionTimes: (state, action: PayloadAction<{ startTime?: string, endTime?: string }>) => {
       if (state.activeRollcall) {
 
@@ -135,5 +145,5 @@ const rollcallSlice = createSlice({
   },
 });
 
-export const { updateActiveEntryStatus, updateActiveEntryNote, updateSessionTimes, clearActiveRollcall } = rollcallSlice.actions;
+export const { updateActiveEntryStatus, updateActiveEntryNote, updateSessionMetadata, updateSessionTimes, clearActiveRollcall } = rollcallSlice.actions;
 export default rollcallSlice.reducer;

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   StatusBar,
   useColorScheme,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,21 +16,25 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../../core/hooks/useRedux';
 import { Palette, Colors, Spacing, Radius } from '@/src/core/constants/Theme';
-import { saveRollcallSession } from '../store/rollcallSlice';
+import { saveRollcallSession, updateSessionMetadata } from '../store/rollcallSlice';
 import { AttendanceStatus, RollcallEntryResponseDto, CreateRollcallRequest } from '../types/Rollcall';
+import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
+import { ProfileButton } from '@/src/core/components/ProfileButton';
 
 const SessionSummaryScreen = () => {
+  const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const router = useRouter();
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const { activeRollcall, isLoading } = useAppSelector((state) => state.rollcalls);
 
-  // Bento Grid Statistics Calculation
   const stats = useMemo(() => {
+
     if (!activeRollcall) {
       return { total: 0, present: 0, late: 0, absent: 0 };
     }
+
     const entries = activeRollcall.entries;
     return {
       total: entries.length,
@@ -45,8 +50,13 @@ const SessionSummaryScreen = () => {
       return;
     }
 
+    const groupId = activeRollcall.groupId;
+
+    const now = new Date();
+    const formattedDate = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+
     const request: CreateRollcallRequest = {
-      title: activeRollcall.title,
+      title: activeRollcall.title || `Session - ${formattedDate}`,
       description: activeRollcall.description,
       date: activeRollcall.date,
       startTime: activeRollcall.startTime,
@@ -62,8 +72,12 @@ const SessionSummaryScreen = () => {
     const result = await dispatch(saveRollcallSession(request));
 
     if (saveRollcallSession.fulfilled.match(result)) {
-      router.dismissAll();
+      router.replace(`/groups/${groupId}`);
     }
+  };
+
+  const handleDescriptionChange = (text: string) => {
+    dispatch(updateSessionMetadata({ description: text }));
   };
 
   if (!activeRollcall) {
@@ -74,16 +88,18 @@ const SessionSummaryScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      {/* TopAppBar */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-            <MaterialCommunityIcons name="close" size={24} color={theme.subText} />
-          </TouchableOpacity>
-          <Text style={[styles.brandTitle, { color: theme.primary }]}>Burdaa</Text>
-          <View style={styles.headerBadge}>
-            <Text style={[styles.headerBadgeText, { color: theme.primary }]}>Rollcall Summary</Text>
+        <View style={styles.headerLeadingRow}>
+          <View style={styles.headerLeading}>
+            <ExecutiveBackButton onPress={() => router.back()} />
+            <View style={styles.headerTitles}>
+              <Text style={[styles.ledgerLabel, { color: theme.subText }]}>ROLLCALL SUMMARY</Text>
+              <Text style={[styles.ledgerTitle, { color: theme.primary }]} numberOfLines={1}>
+                Final Review
+              </Text>
+            </View>
           </View>
+          <ProfileButton />
         </View>
       </View>
 
@@ -93,18 +109,47 @@ const SessionSummaryScreen = () => {
           <Text style={[styles.heroLabel, { color: theme.subText }]}>SESSION OVERVIEW</Text>
           <View style={styles.heroTitleRow}>
             <Text style={[styles.heroTitle, { color: theme.primary }]}>Executive Summary</Text>
-            <View style={[styles.sessionIdBadge, { backgroundColor: theme.primaryContainer }]}>
-              <Text style={[styles.sessionIdText, { color: theme.onPrimary }]}>Session ID: #ACTIVE</Text>
+
+            <View style={[styles.sessionIdBadge, { backgroundColor: theme.tonalLayerLow }]}>
+              <MaterialCommunityIcons
+                name={activeRollcall.startTime ? "clock-outline" : "clock-alert-outline"}
+                size={14}
+                color={activeRollcall.startTime ? theme.primary : theme.subText}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[styles.sessionIdText, { color: activeRollcall.startTime ? theme.primary : theme.subText }]}>
+                {activeRollcall.startTime && activeRollcall.endTime
+                  ? `${activeRollcall.startTime} - ${activeRollcall.endTime}`
+                  : "TIME NOT SPECIFIED"
+                }
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Bento Grid Stats */}
         <View style={styles.bentoGrid}>
-          <StatCard icon="groups" label="Total Enrolled" value={stats.total} color={theme.tonalLayerLow} textColor={theme.primary} />
-          <StatCard icon="check-circle" label="Present" value={stats.present} color={theme.present} textColor={theme.primary} fill />
-          <StatCard icon="clock" label="Late Arrivals" value={stats.late} color={theme.late} textColor={theme.accent} fill />
-          <StatCard icon="close-circle" label="Absent" value={stats.absent} color={theme.absent} textColor={Palette.onSurface} fill />
+          <StatCard icon="account-group" label="Total Enrolled" value={stats.total} color={theme.tonalLayerLow} textColor={theme.primary} />
+          <StatCard icon="check-circle" label="Present" value={stats.present} color={theme.present} textColor={theme.primary} />
+          <StatCard icon="clock" label="Late Arrivals" value={stats.late} color={theme.late} textColor={theme.accent} />
+          <StatCard icon="close-circle" label="Absent" value={stats.absent} color={theme.absent} textColor={Palette.onSurface} />
+        </View>
+
+        <View style={styles.noteSection}>
+          <Text style={[styles.heroLabel, { color: theme.subText }]}>EXECUTIVE SESSION NOTES</Text>
+          <TextInput
+            style={[styles.noteInput, {
+              backgroundColor: theme.cardBase,
+              color: theme.text,
+              borderColor: theme.outline
+            }]}
+            placeholder="How was the session? (Optional)"
+            placeholderTextColor={theme.subText}
+            multiline
+            numberOfLines={4}
+            value={activeRollcall.description || ''}
+            onChangeText={handleDescriptionChange}
+          />
         </View>
 
         {/* Detailed Review List */}
@@ -118,7 +163,7 @@ const SessionSummaryScreen = () => {
           </View>
 
           {activeRollcall.entries.map((entry: RollcallEntryResponseDto) => (
-            <ReviewItem key={entry.memberId} entry={entry} theme={theme} />
+            <ReviewItem key={entry.memberId} entry={entry} theme={theme} imageBase={IMAGE_BASE_URL} />
           ))}
 
           <TouchableOpacity style={styles.viewMoreButton}>
@@ -128,19 +173,16 @@ const SessionSummaryScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Fixed Bottom Action Bar */}
+      {/* Bottom Action Bar */}
       <View style={styles.footerContainer}>
         <View style={[styles.footerBlur, { backgroundColor: colorScheme === 'dark' ? 'rgba(4, 23, 44, 0.7)' : 'rgba(255, 255, 255, 0.7)' }]}>
           <View style={styles.footerActions}>
             <TouchableOpacity
-              style={[
-                styles.modifyButton,
-                { backgroundColor: theme.surfaceContainerHigh || Palette.surfaceContainerHigh }
-              ]}
+              style={[styles.modifyButton, { backgroundColor: theme.tonalLayerLow }]}
               onPress={() => router.back()}
             >
               <MaterialCommunityIcons name="pencil" size={20} color={theme.primary} />
-              <Text style={[styles.modifyButtonText, { color: theme.primary }]}>Modify Entries</Text>
+              <Text style={[styles.modifyButtonText, { color: theme.primary }]}>Modify</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.saveButtonContainer} onPress={handleSave} disabled={isLoading}>
@@ -169,7 +211,7 @@ const StatCard = ({ icon, label, value, color, textColor, fill }: any) => (
   </View>
 );
 
-const ReviewItem = ({ entry, theme }: any) => {
+const ReviewItem = ({ entry, theme, imageBase }: any) => {
   const getStatusConfig = () => {
     switch (entry.status) {
       case AttendanceStatus.Present: return { label: 'PRESENT', color: theme.present };
@@ -183,13 +225,20 @@ const ReviewItem = ({ entry, theme }: any) => {
   return (
     <View style={styles.reviewItem}>
       <View style={styles.memberInfo}>
-        <Image
-          source={{ uri: `https://ui-avatars.com/api/?name=${entry.memberFirstName}+${entry.memberLastName}&background=random` }}
-          style={styles.avatar}
-        />
+        <View style={[styles.avatar, { backgroundColor: theme.tonalLayerLow }]}>
+          {entry.profileImageUrl ? (
+            <Image source={{ uri: `${imageBase}${entry.profileImageUrl}` }} style={styles.avatarImage} />
+          ) : (
+            <Text style={[styles.avatarText, { color: theme.primary }]}>
+              {entry.memberFirstName?.[0]}{entry.memberLastName?.[0]}
+            </Text>
+          )}
+        </View>
         <View>
           <Text style={[styles.memberName, { color: theme.text }]}>{entry.memberFirstName} {entry.memberLastName}</Text>
-          <Text style={[styles.memberMeta, { color: theme.subText }]}>ID: {entry.memberId.substring(0, 8)}</Text>
+          <Text style={[styles.memberMeta, { color: theme.accent }]}>
+            {entry.externalId || "ID NOT ASSIGNED"}
+          </Text>
         </View>
       </View>
       <View style={[styles.statusBadge, { backgroundColor: config.color }]}>
@@ -212,6 +261,34 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md
+  },
+  headerLeadingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm
+  },
+  headerLeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+  },
+  headerTitles: {
+    justifyContent: 'center',
+    flex: 1,
+  },
+  ledgerLabel: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase'
+  },
+  ledgerTitle: {
+    fontFamily: 'Manrope-ExtraBold',
+    fontSize: 24,
+    marginTop: -2,
   },
   headerContent: {
     flexDirection: 'row',
@@ -262,13 +339,17 @@ const styles = StyleSheet.create({
     flex: 1
   },
   sessionIdBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radius.lg
+    paddingVertical: 8,
+    borderRadius: Radius.md,
+    marginLeft: 12,
   },
   sessionIdText: {
-    fontSize: 12,
-    fontWeight: '600'
+    fontFamily: 'Inter-Bold',
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
   bentoGrid: {
     flexDirection: 'row',
@@ -335,15 +416,30 @@ const styles = StyleSheet.create({
   avatar: {
     width: 48,
     height: 48,
-    borderRadius: 24
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  avatarText: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 16,
+    textTransform: 'uppercase',
   },
   memberName: {
     fontSize: 18,
     fontWeight: '800'
   },
   memberMeta: {
-    fontSize: 14,
-    fontWeight: '500'
+    fontFamily: 'Inter-Medium',
+    fontSize: 13,
+    marginTop: 2,
+    letterSpacing: 0.2,
   },
   statusBadge: {
     paddingHorizontal: 16,
@@ -423,6 +519,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     letterSpacing: 2
+  },
+  noteSection: {
+    marginBottom: Spacing.xl,
+  },
+  noteInput: {
+    marginTop: 8,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    fontSize: 15,
+    fontFamily: 'Inter-Medium',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    borderWidth: 1,
   },
 });
 
