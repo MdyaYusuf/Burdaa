@@ -17,6 +17,7 @@ import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchGroups } from '@/src/features/groups/store/groupSlice';
 import { fetchRollcallPreviews } from '@/src/features/rollcalls/store/rollcallSlice';
+import { RecentEntries } from '@/src/core/components/RecentEntries';
 
 const theme = Colors.light;
 const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
@@ -27,7 +28,6 @@ export default function DashboardScreen() {
   const { groups, isLoading: groupsLoading } = useAppSelector((state) => state.groups);
   const { previews, isLoading: rollcallsLoading } = useAppSelector((state) => state.rollcalls);
 
-  // Sync both Groups and Rollcall History on focus
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchGroups());
@@ -183,52 +183,8 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Recent Entries Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Entries</Text>
-        </View>
+        <RecentEntries />
 
-        <View style={styles.dynamicListContainer}>
-          {previews.length > 0 ? (
-            previews.slice(0, 5).map((preview) => (
-              <TouchableOpacity
-                key={preview.id}
-                style={styles.recentSessionCard}
-                onPress={() =>
-                  router.push({
-                    pathname: '/rollcalls/[id]',
-                    params: { id: preview.id }
-                  })
-                }
-              >
-                <View style={styles.sessionIcon}>
-                  <MaterialCommunityIcons name="calendar-check" size={24} color={theme.primary} />
-                </View>
-
-                <View style={styles.sessionDetails}>
-                  <Text style={styles.sessionTitleText} numberOfLines={1}>
-                    {preview.title}
-                  </Text>
-                  <Text style={styles.sessionDateText}>
-                    {preview.groupName || "General Session"}
-                  </Text>
-                </View>
-
-                <View style={styles.sessionMetrics}>
-                  <Text style={[styles.sessionMetricText, { color: '#2e7d32' }]}>P: {preview.totalPresent}</Text>
-                  <Text style={[styles.sessionMetricText, { color: theme.accent }]}>L: {preview.totalLate}</Text>
-                  <Text style={[styles.sessionMetricText, { color: '#ba1a1a' }]}>A: {preview.totalAbsent}</Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.ledgerCard}>
-              <Text style={styles.comingSoonText}>
-                Rollcall history will appear here once sessions begin.
-              </Text>
-            </View>
-          )}
-        </View>
       </ScrollView>
 
       {/* Persistent Floating Action Button */}

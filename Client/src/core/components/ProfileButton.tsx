@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  Pressable,
+  Image
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAppDispatch } from '../hooks/useRedux';
+import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
 import { useRouter } from 'expo-router';
 import { logout, logoutUser } from '../../features/auth/store/authSlice';
 import { clearOrganization } from '@/src/features/organizations/store/organizationSlice';
 import { Colors, Spacing, Radius } from '../constants/Theme';
+import { getProfileImageUri } from '../utils/imageUtils';
 
 const theme = Colors.light;
 
@@ -13,12 +23,12 @@ export const ProfileButton = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
-
+  const { user } = useAppSelector((state) => state.auth);
   const toggleMenu = () => setIsMenuVisible(!isMenuVisible);
+  const imageUri = getProfileImageUri(user?.profileImageUrl);
 
   const handleLogout = () => {
     setIsMenuVisible(false);
-
     Alert.alert(
       "Oturumu Kapat",
       "Oturumunuzu sonlandırmak istediğinize emin misiniz?",
@@ -32,7 +42,6 @@ export const ProfileButton = () => {
               dispatch(logout());
               dispatch(clearOrganization());
               dispatch(logoutUser());
-
               router.replace('/(auth)' as any);
             }, 300);
           }
@@ -43,17 +52,20 @@ export const ProfileButton = () => {
 
   const handleSettings = () => {
     setIsMenuVisible(false);
-    Alert.alert("Bilgi", "Ayarlar menüsü yakında eklenecek.");
+    router.push('/settings' as any);
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.profileCircle}
-        onPress={toggleMenu}
-        activeOpacity={0.7}
-      >
-        <MaterialCommunityIcons name="account" size={24} color={theme.primary} />
+      <TouchableOpacity style={styles.profileCircle} onPress={toggleMenu}>
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.avatarImage}
+          />
+        ) : (
+          <MaterialCommunityIcons name="account" size={24} color={theme.primary} />
+        )}
       </TouchableOpacity>
 
       <Modal
@@ -90,7 +102,12 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: theme.tonalLayerLow,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   modalOverlay: { flex: 1 },
   menuAnchor: {

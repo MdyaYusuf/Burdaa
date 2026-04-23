@@ -82,6 +82,16 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.error = null;
     },
+    updateAuthUserInfo: (state, action: PayloadAction<{ username: string; profileImageUrl?: string }>) => {
+
+      if (state.user) {
+        state.user.username = action.payload.username;
+
+        if (action.payload.profileImageUrl !== undefined) {
+          state.user.profileImageUrl = action.payload.profileImageUrl;
+        }
+      }
+    },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
@@ -129,5 +139,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, updateAuthUserInfo } = authSlice.actions;
 export default authSlice.reducer;

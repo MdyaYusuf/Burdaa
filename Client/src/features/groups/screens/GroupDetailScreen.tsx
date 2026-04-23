@@ -21,6 +21,8 @@ import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { calculateAge } from '@/src/core/utils/dateUtils';
 import { startNewRollcallSession } from '@/src/features/rollcalls/store/rollcallSlice';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fetchRollcallPreviews } from '@/src/features/rollcalls/store/rollcallSlice';
+import { RecentEntries } from '@/src/core/components/RecentEntries';
 
 interface Props {
   groupId: string;
@@ -44,6 +46,7 @@ export function GroupDetailScreen({ groupId }: Props) {
       const timer = setTimeout(() => {
         setIsReady(true);
         dispatch(fetchMembers());
+        dispatch(fetchRollcallPreviews());
       }, 0);
 
       return () => clearTimeout(timer);
@@ -107,18 +110,22 @@ export function GroupDetailScreen({ groupId }: Props) {
         }
       >
         {/* Search Bar */}
-        <View style={[styles.searchRow, { backgroundColor: theme.tonalLayerLow }]}>
-          <MaterialCommunityIcons name="magnify" size={22} color={theme.subText} />
-          <TextInput
-            placeholder="Search members..."
-            style={[styles.searchInput, { color: theme.primary }]}
-            placeholderTextColor={theme.subText}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          <TouchableOpacity style={styles.filterButton}>
-            <MaterialCommunityIcons name="tune" size={20} color={theme.subText} />
-          </TouchableOpacity>
+        <View style={styles.searchRow}>
+          <View style={[styles.searchContainer, { backgroundColor: theme.tonalLayerLow }]}>
+            <MaterialCommunityIcons
+              name="magnify"
+              size={20}
+              color={theme.subText}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              placeholder="Search members..."
+              style={[styles.searchInput, { color: theme.primary }]}
+              placeholderTextColor={theme.subText}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
         </View>
 
         {/* Bento Stats Grid */}
@@ -177,6 +184,12 @@ export function GroupDetailScreen({ groupId }: Props) {
             </View>
           </LinearGradient>
         </TouchableOpacity>
+
+        <RecentEntries groupId={groupId} limit={3} />
+
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Members</Text>
+        </View>
 
         {/* Dynamic Roster Ledger */}
         <View style={[styles.listWrapper, { backgroundColor: theme.tonalLayerLow }]}>
@@ -305,20 +318,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: 120,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.xl,
-    height: 56,
-    marginVertical: Spacing.lg,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Inter-Medium',
-    fontSize: 15,
-    marginLeft: Spacing.sm,
   },
   filterButton: {
     padding: Spacing.xs
@@ -534,5 +533,33 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     marginTop: 2,
+  },
+  sectionHeader: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  sectionTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 22,
+  },
+  searchRow: {
+    paddingHorizontal: 0,
+    marginBottom: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.xl,
+    paddingHorizontal: Spacing.md,
+    height: 56,
+  },
+  searchIcon: {
+    marginRight: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: 'Inter-Medium',
+    fontSize: 15,
   },
 });

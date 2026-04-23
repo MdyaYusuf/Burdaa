@@ -144,6 +144,14 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
+        <Stack.Screen
+          name="settings/index"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right'
+          }}
+        />
+
         {/* Organization Creation Modal */}
         <Stack.Screen
           name="create-organization"

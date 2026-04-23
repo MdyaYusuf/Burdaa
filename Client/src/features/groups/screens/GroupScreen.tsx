@@ -19,6 +19,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { GroupResponseDto } from '@/src/features/groups/types/Group';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
+import { fetchRollcallPreviews } from '../../rollcalls/store/rollcallSlice';
+import { RecentEntries } from '@/src/core/components/RecentEntries';
 
 export function GroupScreenComponent() {
   const router = useRouter();
@@ -38,6 +40,7 @@ export function GroupScreenComponent() {
       const timer = setTimeout(() => {
         setIsReady(true);
         dispatch(fetchGroups());
+        dispatch(fetchRollcallPreviews());
       }, 0);
 
       return () => clearTimeout(timer);
@@ -96,7 +99,10 @@ export function GroupScreenComponent() {
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
-            onRefresh={() => dispatch(fetchGroups())}
+            onRefresh={() => {
+              dispatch(fetchGroups());
+              dispatch(fetchRollcallPreviews());
+            }}
             tintColor={theme.primary}
           />
         }
@@ -191,6 +197,9 @@ export function GroupScreenComponent() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <RecentEntries limit={3} />
+
       </ScrollView>
 
       <TouchableOpacity
