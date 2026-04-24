@@ -20,14 +20,15 @@ import { saveRollcallSession, updateSessionMetadata } from '../store/rollcallSli
 import { AttendanceStatus, RollcallEntryResponseDto, CreateRollcallRequest } from '../types/Rollcall';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
+import { getProfileImageUri } from '@/src/core/utils/imageUtils';
 
 const SessionSummaryScreen = () => {
-  const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const router = useRouter();
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const { activeRollcall, isLoading } = useAppSelector((state) => state.rollcalls);
+  const { selectedOrganization } = useAppSelector((state) => state.organizations);
 
   const stats = useMemo(() => {
 
@@ -46,6 +47,10 @@ const SessionSummaryScreen = () => {
 
   const handleSave = async () => {
 
+    if (!selectedOrganization?.id) {
+      return;
+    }
+
     if (!activeRollcall) {
       return;
     }
@@ -62,6 +67,7 @@ const SessionSummaryScreen = () => {
       startTime: activeRollcall.startTime,
       endTime: activeRollcall.endTime,
       groupId: activeRollcall.groupId,
+      organizationId: selectedOrganization.id,
       entries: activeRollcall.entries.map(e => ({
         memberId: e.memberId,
         status: e.status,
@@ -163,7 +169,8 @@ const SessionSummaryScreen = () => {
           </View>
 
           {activeRollcall.entries.map((entry: RollcallEntryResponseDto) => (
-            <ReviewItem key={entry.memberId} entry={entry} theme={theme} imageBase={IMAGE_BASE_URL} />
+            // 🟦 Fixed: No longer passing IMAGE_BASE_URL here
+            <ReviewItem key={entry.memberId} entry={entry} theme={theme} />
           ))}
 
           <TouchableOpacity style={styles.viewMoreButton}>
@@ -227,7 +234,7 @@ const ReviewItem = ({ entry, theme, imageBase }: any) => {
       <View style={styles.memberInfo}>
         <View style={[styles.avatar, { backgroundColor: theme.tonalLayerLow }]}>
           {entry.profileImageUrl ? (
-            <Image source={{ uri: `${imageBase}${entry.profileImageUrl}` }} style={styles.avatarImage} />
+            <Image source={{ uri: getProfileImageUri(entry.profileImageUrl) || '' }} style={styles.avatarImage} />
           ) : (
             <Text style={[styles.avatarText, { color: theme.primary }]}>
               {entry.memberFirstName?.[0]}{entry.memberLastName?.[0]}

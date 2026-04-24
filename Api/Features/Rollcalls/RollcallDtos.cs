@@ -7,6 +7,7 @@ public sealed record CreateRollcallRequest(
   TimeSpan? StartTime,
   TimeSpan? EndTime,
   Guid GroupId,
+  Guid OrganizationId,
   List<CreateRollcallEntryDto> Entries);
 
 public sealed record CreateRollcallEntryDto(

@@ -13,6 +13,7 @@ export interface MemberResponseDto {
   birthDate: string | null;
   profileImageUrl: string | null;
   groupId: string;
+  groupName: string;
   createdDate: string;
 }
 
@@ -29,6 +30,7 @@ export interface UpdateMemberRequest {
   id: string;
   firstName: string;
   lastName: string;
+  groupId: string;
   externalId: string | null;
   isActive: boolean;
   birthDate: string | null;
@@ -47,4 +49,13 @@ export interface MemberPreviewDto {
   lastName: string;
   externalId: string | null;
   isActive: boolean;
+}
+
+export interface MemberStatsResponseDto {
+  totalSessions: number;
+  attendanceRate: number;
+  presentCount: number;
+  lateCount: number;
+  absentCount: number;
+  lastSeen: string | null;
 }

@@ -48,4 +48,10 @@ public interface IMemberService
     Guid currentUserId,
     string userRole,
     CancellationToken cancellationToken = default);
+
+  Task<ReturnModel<MemberStatsResponseDto>> GetStatsByIdAsync(
+    Guid id,
+    Guid currentUserId,
+    string userRole,
+    CancellationToken cancellationToken = default);
 }

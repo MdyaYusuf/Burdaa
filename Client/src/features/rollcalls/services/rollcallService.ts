@@ -9,16 +9,17 @@ import {
 } from '../types/Rollcall';
 
 export const rollcallService = {
-  async getAll(): Promise<ReturnModel<RollcallResponseDto[]>> {
-    return await apiClient.request<RollcallResponseDto[]>('/rollcalls', {
+  async getAll(organizationId: string): Promise<ReturnModel<RollcallResponseDto[]>> {
+    return await apiClient.request<RollcallResponseDto[]>(`/rollcalls?organizationId=${organizationId}`, {
       method: 'GET'
     });
   },
 
-  async getPreviews(): Promise<ReturnModel<RollcallPreviewDto[]>> {
-    return await apiClient.request<RollcallPreviewDto[]>('/rollcalls/previews', {
-      method: 'GET'
-    });
+  async getPreviews(organizationId: string, count: number): Promise<ReturnModel<RollcallPreviewDto[]>> {
+    return await apiClient.request<RollcallPreviewDto[]>(
+      `/rollcalls/previews?organizationId=${organizationId}&count=${count}`,
+      { method: 'GET' }
+    );
   },
 
   async getTemplate(groupId: string): Promise<ReturnModel<RollcallResponseDto>> {

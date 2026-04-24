@@ -21,11 +21,15 @@ public class RollcallsController(IRollcallService _rollcallService) : CustomBase
   }
 
   [HttpGet("previews")]
-  public async Task<IActionResult> GetPreviews(CancellationToken cancellationToken)
+  public async Task<IActionResult> GetPreviews(
+  [FromQuery] Guid organizationId,
+  [FromQuery] int count = 5,
+  CancellationToken cancellationToken = default)
   {
     var result = await _rollcallService.GetPreviewsAsync(
+      organizationId: organizationId,
       currentUserId: GetUserId(),
-      userRole: GetUserRole(),
+      count: count,
       cancellationToken: cancellationToken);
 
     return CreateActionResult(result);

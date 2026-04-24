@@ -3,31 +3,59 @@ import {
   MemberResponseDto,
   CreateMemberRequest,
   UpdateMemberRequest,
-  CreatedMemberResponseDto
+  CreatedMemberResponseDto,
+  MemberStatsResponseDto
 } from '../types/Member';
 import { memberService } from '../services/memberService';
 
 interface MemberState {
   members: MemberResponseDto[];
+  selectedMember: MemberResponseDto | null;
+  stats: MemberStatsResponseDto | null;
   isLoading: boolean;
   error: string | null;
 }
 
 const initialState: MemberState = {
   members: [],
+  selectedMember: null,
+  stats: null,
   isLoading: false,
   error: null,
 };
 
 // Fetch Thunk
-export const fetchMembers = createAsyncThunk<MemberResponseDto[], void, { rejectValue: string }>(
+export const fetchMembers = createAsyncThunk<MemberResponseDto[], string, { rejectValue: string }>(
   'members/fetchAll',
-  async (_, { rejectWithValue }) => {
-    const response = await memberService.getAll();
+  async (groupId, { rejectWithValue }) => {
+    const response = await memberService.getAll(groupId);
 
     if (response.success) {
-
       return response.data ?? [];
+    }
+    return rejectWithValue(response.message);
+  }
+);
+
+export const fetchMemberById = createAsyncThunk<MemberResponseDto, string, { rejectValue: string }>(
+  'members/fetchById',
+  async (memberId, { rejectWithValue }) => {
+    const response = await memberService.getById(memberId);
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return rejectWithValue(response.message);
+  }
+);
+
+export const fetchMemberStats = createAsyncThunk<MemberStatsResponseDto, string, { rejectValue: string }>(
+  'members/fetchStats',
+  async (memberId, { rejectWithValue }) => {
+    const response = await memberService.getStatsById(memberId);
+
+    if (response.success && response.data) {
+      return response.data;
     }
     return rejectWithValue(response.message);
   }
@@ -57,7 +85,7 @@ export const createMember = createAsyncThunk<CreatedMemberResponseDto, CreateMem
     const response = await memberService.create(formData);
 
     if (response.success && response.data) {
-      dispatch(fetchMembers());
+      dispatch(fetchMembers(data.groupId));
 
       return response.data;
     }
@@ -73,6 +101,7 @@ export const updateMember = createAsyncThunk<void, UpdateMemberRequest, { reject
     formData.append('id', data.id);
     formData.append('firstName', data.firstName);
     formData.append('lastName', data.lastName);
+    formData.append('groupId', data.groupId);
     formData.append('isActive', String(data.isActive));
 
     if (data.externalId) {
@@ -90,7 +119,7 @@ export const updateMember = createAsyncThunk<void, UpdateMemberRequest, { reject
     const response = await memberService.update(formData);
 
     if (response.success) {
-      dispatch(fetchMembers());
+      dispatch(fetchMembers(data.groupId));
 
       return;
     }
@@ -104,6 +133,8 @@ const memberSlice = createSlice({
   reducers: {
     clearMembers: (state) => {
       state.members = [];
+      state.selectedMember = null;
+      state.stats = null
     }
   },
   extraReducers: (builder) => {
@@ -119,6 +150,12 @@ const memberSlice = createSlice({
       .addCase(fetchMembers.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? 'Failed to fetch members';
+      })
+      .addCase(fetchMemberById.fulfilled, (state, action) => {
+        state.selectedMember = action.payload;
+      })
+      .addCase(fetchMemberStats.fulfilled, (state, action) => {
+        state.stats = action.payload;
       })
       .addMatcher(
         (action) => action.type.endsWith('/pending') && (action.type.includes('create') || action.type.includes('update')),

@@ -50,8 +50,9 @@ public interface IRollcallService
     CancellationToken cancellationToken = default);
 
   Task<ReturnModel<List<RollcallPreviewDto>>> GetPreviewsAsync(
+    Guid organizationId,
     Guid currentUserId,
-    string userRole,
+    int count,
     CancellationToken cancellationToken = default);
 
   Task<ReturnModel<RollcallResponseDto>> GetRollcallTemplateAsync(

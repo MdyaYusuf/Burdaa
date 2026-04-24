@@ -23,34 +23,47 @@ import { startNewRollcallSession } from '@/src/features/rollcalls/store/rollcall
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchRollcallPreviews } from '@/src/features/rollcalls/store/rollcallSlice';
 import { RecentEntries } from '@/src/core/components/RecentEntries';
+import { getProfileImageUri } from '@/src/core/utils/imageUtils';
 
 interface Props {
   groupId: string;
 }
-
-const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 export function GroupDetailScreen({ groupId }: Props) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+
+  // Selectors
   const { members, isLoading } = useAppSelector((state) => state.members);
   const { groups } = useAppSelector((state) => state.groups);
+  const { selectedOrganization } = useAppSelector((state) => state.organizations);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isReady, setIsReady] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      // 🏛️ Logic: Do not proceed if context is missing
+      if (!selectedOrganization?.id || !groupId) return;
+
       setIsReady(false);
       const timer = setTimeout(() => {
         setIsReady(true);
-        dispatch(fetchMembers());
-        dispatch(fetchRollcallPreviews());
+
+        // 🟦 Fix: Pass the mandatory Group ID to isolate members
+        dispatch(fetchMembers(groupId));
+
+        // 🟦 Fix: Pass the mandatory Object to isolate previews
+        dispatch(fetchRollcallPreviews({
+          organizationId: selectedOrganization.id,
+          count: 10
+        }));
       }, 0);
 
       return () => clearTimeout(timer);
-    }, [dispatch])
+    }, [dispatch, selectedOrganization?.id, groupId])
   );
 
   const currentGroup = groups.find(g => g.id === groupId);
@@ -104,7 +117,16 @@ export function GroupDetailScreen({ groupId }: Props) {
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
-            onRefresh={() => dispatch(fetchMembers())}
+            onRefresh={() => {
+
+              if (selectedOrganization?.id && groupId) {
+                dispatch(fetchMembers(groupId));
+                dispatch(fetchRollcallPreviews({
+                  organizationId: selectedOrganization.id,
+                  count: 10
+                }));
+              }
+            }}
             tintColor={theme.primary}
           />
         }
@@ -212,20 +234,25 @@ export function GroupDetailScreen({ groupId }: Props) {
             </View>
           ) : (
             <View style={[styles.listCard, { backgroundColor: theme.cardBase }]}>
-              {filteredMembers.map((member) => {
+              {filteredMembers.map((member, index) => {
                 const ageDisplay = calculateAge(member.birthDate);
+                const isLast = index === filteredMembers.length - 1;
 
                 return (
                   <TouchableOpacity
                     key={member.id}
-                    style={styles.memberRow}
-                    activeOpacity={0.7}
+                    style={[
+                      styles.memberRow,
+                      isLast && { borderBottomWidth: 0 }
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => router.push(`/members/${member.id}` as any)}
                   >
                     <View style={styles.memberInfo}>
                       <View style={[styles.avatar, { backgroundColor: theme.present }]}>
                         {member.profileImageUrl ? (
                           <Image
-                            source={{ uri: `${IMAGE_BASE_URL}${member.profileImageUrl}` }}
+                            source={{ uri: getProfileImageUri(member.profileImageUrl) || '' }}
                             style={styles.avatarImage}
                           />
                         ) : (
@@ -410,6 +437,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(196, 198, 205, 0.15)',
   },
   memberInfo: {
     flexDirection: 'row',

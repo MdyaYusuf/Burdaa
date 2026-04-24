@@ -13,14 +13,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius } from '@/src/core/constants/Theme';
+import { Colors, Spacing, Radius, Palette } from '@/src/core/constants/Theme';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { selectOrganization, fetchOrganizations } from '../store/organizationSlice';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '@/src/core/hooks/useRedux';
-
-const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+import { getProfileImageUri } from '@/src/core/utils/imageUtils';
+import { clearGroups } from '@/src/features/groups/store/groupSlice';
+import { clearMembers } from '@/src/features/members/store/memberSlice';
+import { clearActiveRollcall } from '@/src/features/rollcalls/store/rollcallSlice';
 
 export function OrganizationScreenComponent() {
   const router = useRouter();
@@ -51,6 +53,16 @@ export function OrganizationScreenComponent() {
   const handleCreatePress = () => router.push('/create-organization' as any);
 
   const handleBackPress = () => router.push('/(tabs)');
+
+  const handleSelectOrg = (org: any) => {
+    dispatch(selectOrganization(org));
+
+    dispatch(clearGroups());
+    dispatch(clearMembers());
+    dispatch(clearActiveRollcall());
+
+    router.replace('/(tabs)');
+  };
 
   return (
     <SafeAreaView
@@ -108,6 +120,22 @@ export function OrganizationScreenComponent() {
           />
         }
       >
+        <View style={styles.quoteCard}>
+          {/* Top Right Thematic Icons */}
+          <View style={styles.iconRow}>
+            <MaterialCommunityIcons name="notebook-outline" size={18} color={Palette.primary} />
+            <MaterialCommunityIcons name="pencil" size={18} color={Palette.primary} />
+            <MaterialCommunityIcons name="whistle-outline" size={20} color={Palette.primary} />
+          </View>
+
+          {/* Triple Action Sentences */}
+          <Text style={styles.quoteText}>
+            <Text style={styles.quoteBold}>Lead</Text> with clarity{"\n"}
+            <Text style={styles.quoteBold}>Master</Text> every detail{"\n"}
+            <Text style={styles.quoteBold}>Organize</Text> your world
+          </Text>
+        </View>
+
         <View style={styles.listContainer}>
           {isReady && filteredOrgs.length === 0 && (
             <View style={styles.emptyStateBlock}>
@@ -145,11 +173,8 @@ export function OrganizationScreenComponent() {
           {/* Organization Cards */}
           {isReady &&
             filteredOrgs.map((org) => {
-              const isCurrent =
-                String(org.id) === String(selectedOrganization?.id);
-              const fullLogoUri = org.logoUrl
-                ? `${IMAGE_BASE_URL}${org.logoUrl}`
-                : null;
+              const isCurrent = String(org.id) === String(selectedOrganization?.id);
+              const fullLogoUri = getProfileImageUri(org.logoUrl);
 
               return (
                 <TouchableOpacity
@@ -171,10 +196,7 @@ export function OrganizationScreenComponent() {
                       ],
                   ]}
                   activeOpacity={0.9}
-                  onPress={() => {
-                    dispatch(selectOrganization(org));
-                    router.replace('/(tabs)');
-                  }}
+                  onPress={() => handleSelectOrg(org)}
                 >
                   <View style={styles.orgContent}>
                     <View
@@ -453,5 +475,37 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 24,
+  },
+  quoteCard: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xl,
+    padding: Spacing.lg,
+    paddingRight: 64,
+    backgroundColor: Palette.surfaceContainerLow,
+    borderRadius: Radius.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: Palette.primary,
+    position: 'relative',
+    minHeight: 165,
+    justifyContent: 'center',
+  },
+  quoteText: {
+    fontFamily: 'Manrope-Medium',
+    fontSize: 19,
+    color: Palette.primary,
+    lineHeight: 28,
+    letterSpacing: -0.5,
+  },
+  quoteBold: {
+    fontFamily: 'Manrope-ExtraBold',
+  },
+  iconRow: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+    flexDirection: 'row',
+    gap: 8,
+    opacity: 0.4,
   },
 });

@@ -6,7 +6,8 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  useColorScheme
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,13 +16,12 @@ import { Colors, Spacing, Radius } from '@/src/core/constants/Theme';
 import { useAppDispatch, useAppSelector } from '@/src/core/hooks/useRedux';
 import { createGroup } from '../store/groupSlice';
 
-const theme = Colors.light;
-
 export default function CreateGroupModal() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
   const { selectedOrganization } = useAppSelector((state) => state.organizations);
-
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +29,6 @@ export default function CreateGroupModal() {
   const handleCreate = async () => {
 
     if (!groupName || !selectedOrganization?.id) {
-
       return;
     }
 
@@ -49,24 +48,27 @@ export default function CreateGroupModal() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.closeButton, { backgroundColor: theme.tonalLayerLow }]}
+        >
           <MaterialCommunityIcons name="close" size={24} color={theme.primary} />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.label}>NEW ROSTER</Text>
-          <Text style={styles.title}>Register</Text>
+          <Text style={[styles.label, { color: theme.subText }]}>NEW ROSTER</Text>
+          <Text style={[styles.title, { color: theme.primary }]}>Register</Text>
         </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.formSection}>
           <View>
-            <Text style={styles.inputLabel}>Group Name</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: theme.primary }]}>Group Name</Text>
+            <View style={[styles.inputContainer, { backgroundColor: theme.tonalLayerLow }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.primary }]}
                 placeholder="e.g. Morning Shift A"
                 value={groupName}
                 onChangeText={setGroupName}
@@ -76,10 +78,10 @@ export default function CreateGroupModal() {
           </View>
 
           <View>
-            <Text style={styles.inputLabel}>Purpose / Description (Optional)</Text>
-            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+            <Text style={[styles.inputLabel, { color: theme.primary }]}>Purpose / Description (Optional)</Text>
+            <View style={[styles.inputContainer, styles.textAreaContainer, { backgroundColor: theme.tonalLayerLow }]}>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { color: theme.primary }]}
                 placeholder="e.g. Managing floor staff for the HQ lobby."
                 value={description}
                 onChangeText={setDescription}
@@ -92,7 +94,7 @@ export default function CreateGroupModal() {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, !groupName && styles.buttonDisabled]}
+          style={[styles.submitButton, { backgroundColor: theme.primary }, !groupName && styles.buttonDisabled]}
           onPress={handleCreate}
           disabled={isSubmitting || !groupName}
         >
@@ -101,7 +103,7 @@ export default function CreateGroupModal() {
           ) : (
             <>
               <MaterialCommunityIcons name="check-decagram" size={20} color={theme.onPrimary} />
-              <Text style={styles.submitButtonText}>Create Group</Text>
+              <Text style={[styles.submitButtonText, { color: theme.onPrimary }]}>Create Group</Text>
             </>
           )}
         </TouchableOpacity>
@@ -111,7 +113,9 @@ export default function CreateGroupModal() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: {
+    flex: 1
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -123,48 +127,53 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.tonalLayerLow,
     justifyContent: 'center',
     alignItems: 'center'
   },
-  headerText: { justifyContent: 'center' },
+  headerText: {
+    justifyContent: 'center'
+  },
   label: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    color: theme.subText,
     letterSpacing: 1.5
   },
   title: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 32,
-    color: theme.primary,
     marginTop: -2
   },
-  content: { padding: Spacing.lg, marginTop: Spacing.xl },
-  formSection: { gap: Spacing.lg },
+  content: {
+    padding: Spacing.lg,
+    marginTop: Spacing.xl
+  },
+  formSection: {
+    gap: Spacing.lg
+  },
   inputLabel: {
     fontFamily: 'Inter-Bold',
     fontSize: 12,
-    color: theme.primary,
     marginBottom: 8,
     marginLeft: 4
   },
   inputContainer: {
-    backgroundColor: theme.tonalLayerLow,
     borderRadius: Radius.xl,
     paddingHorizontal: Spacing.md,
     height: 56,
     justifyContent: 'center'
   },
-  textAreaContainer: { height: 120, paddingVertical: Spacing.sm },
+  textAreaContainer: {
+    height: 120,
+    paddingVertical: Spacing.sm
+  },
   input: {
     fontFamily: 'Inter-Medium',
-    fontSize: 15,
-    color: theme.primary
+    fontSize: 15
   },
-  textArea: { textAlignVertical: 'top' },
+  textArea: {
+    textAlignVertical: 'top'
+  },
   submitButton: {
-    backgroundColor: theme.primary,
     height: 56,
     borderRadius: 99,
     flexDirection: 'row',
@@ -173,6 +182,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 40
   },
-  buttonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontFamily: 'Inter-Bold', fontSize: 15, color: theme.onPrimary }
+  buttonDisabled: {
+    opacity: 0.5
+  },
+  submitButtonText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 15
+  }
 });

@@ -15,13 +15,12 @@ const initialState: GroupState = {
 };
 
 // Fetch Thunk
-export const fetchGroups = createAsyncThunk(
+export const fetchGroups = createAsyncThunk<GroupResponseDto[], string, { rejectValue: string }>(
   'groups/fetchAll',
-  async (_, { rejectWithValue }) => {
-    const response = await groupService.getAll();
+  async (organizationId, { rejectWithValue }) => {
+    const response = await groupService.getAll(organizationId);
 
     if (response.success && response.data) {
-
       return response.data;
     }
     return rejectWithValue(response.message);
@@ -34,8 +33,8 @@ export const createGroup = createAsyncThunk(
   async (data: CreateGroupRequest, { dispatch, rejectWithValue }) => {
     const response = await groupService.create(data);
 
-    if (response.success) {
-      dispatch(fetchGroups());
+    if (response.success && response.data) {
+      dispatch(fetchGroups(response.data.organizationId));
 
       return response.data;
     }

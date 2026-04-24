@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius } from '@/src/core/constants/Theme';
+import { Colors, Spacing, Radius, Palette } from '@/src/core/constants/Theme';
 import { useAppDispatch, useAppSelector } from '@/src/core/hooks/useRedux';
 import { fetchGroups } from '@/src/features/groups/store/groupSlice';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -21,6 +21,7 @@ import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { fetchRollcallPreviews } from '../../rollcalls/store/rollcallSlice';
 import { RecentEntries } from '@/src/core/components/RecentEntries';
+import { getProfileImageUri } from '@/src/core/utils/imageUtils';
 
 export function GroupScreenComponent() {
   const router = useRouter();
@@ -32,19 +33,21 @@ export function GroupScreenComponent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isReady, setIsReady] = useState(false);
 
-  const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
-
   useFocusEffect(
     useCallback(() => {
       setIsReady(false);
-      const timer = setTimeout(() => {
-        setIsReady(true);
-        dispatch(fetchGroups());
-        dispatch(fetchRollcallPreviews());
-      }, 0);
 
+      if (selectedOrganization?.id) {
+        dispatch(fetchGroups(selectedOrganization.id));
+        dispatch(fetchRollcallPreviews({
+          organizationId: selectedOrganization.id,
+          count: 5
+        }));
+      }
+
+      const timer = setTimeout(() => setIsReady(true), 100);
       return () => clearTimeout(timer);
-    }, [dispatch])
+    }, [dispatch, selectedOrganization?.id])
   );
 
   const filteredGroups = groups.filter((g: GroupResponseDto) =>
@@ -60,7 +63,7 @@ export function GroupScreenComponent() {
       style={[styles.container, { backgroundColor: theme.background }]}
       edges={['top', 'left', 'right']}
     >
-      {/* Branded Header */}
+      {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerLeading}>
           <ExecutiveBackButton onPress={handleBackPress} />
@@ -74,7 +77,7 @@ export function GroupScreenComponent() {
         <ProfileButton />
       </View>
 
-      {/* Search */}
+      {/* Search Bar */}
       <View style={styles.searchRow}>
         <View style={[styles.searchContainer, { backgroundColor: theme.tonalLayerLow }]}>
           <MaterialCommunityIcons
@@ -100,8 +103,13 @@ export function GroupScreenComponent() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={() => {
-              dispatch(fetchGroups());
-              dispatch(fetchRollcallPreviews());
+              if (selectedOrganization?.id) {
+                dispatch(fetchGroups(selectedOrganization.id));
+                dispatch(fetchRollcallPreviews({
+                  organizationId: selectedOrganization.id,
+                  count: 5
+                }));
+              }
             }}
             tintColor={theme.primary}
           />
@@ -110,6 +118,12 @@ export function GroupScreenComponent() {
         <View style={styles.listContainer}>
           {isReady && filteredGroups.length === 0 && (
             <View style={styles.emptyStateBlock}>
+              <MaterialCommunityIcons
+                name="account-group-outline"
+                size={80}
+                color={theme.subText}
+                style={{ opacity: 0.5, marginBottom: 12 }}
+              />
               <Text style={[styles.createPrompt, { color: theme.subText }]}>
                 {searchQuery ? "No matches found." : "Forming a new roster?"}
               </Text>
@@ -135,73 +149,79 @@ export function GroupScreenComponent() {
           {isReady && filteredGroups.map((group: GroupResponseDto) => (
             <TouchableOpacity
               key={group.id}
-              style={[
-                styles.groupCard,
-                { backgroundColor: theme.cardBase, shadowColor: theme.primary }
-              ]}
-              activeOpacity={0.8}
+              style={styles.groupCard}
+              activeOpacity={0.9}
               onPress={() => router.push(`/groups/${group.id}` as any)}
             >
-              <View style={styles.cardTopRow}>
-                <View style={[styles.logoContainer, { backgroundColor: theme.tonalLayerLow }]}>
+              {/* Background Watermark */}
+              <View style={styles.cardWatermark}>
+                <MaterialCommunityIcons name="shield-check-outline" size={120} color={theme.primary} />
+              </View>
+
+              <View style={styles.cardHeader}>
+                <View style={styles.logoContainer}>
                   {selectedOrganization?.logoUrl ? (
                     <Image
-                      source={{ uri: `${IMAGE_BASE_URL}${selectedOrganization.logoUrl}` }}
+                      source={{ uri: getProfileImageUri(selectedOrganization.logoUrl) || '' }}
                       style={styles.logoImage}
                       resizeMode="contain"
                     />
                   ) : (
-                    <MaterialCommunityIcons name="shield-outline" size={24} color={theme.subText} />
+                    <MaterialCommunityIcons name="shield-star" size={28} color={theme.primary} />
                   )}
                 </View>
 
-                <View style={styles.rollcallInfo}>
-                  <Text style={[styles.rollcallLabel, { color: theme.subText }]}>ROLLCALLS</Text>
-                  <Text style={[
-                    styles.rollcallValue,
-                    { color: theme.tint },
-                    group.totalRollcalls === 0 && { color: '#ba1a1a' }
-                  ]}>
-                    {group.totalRollcalls}
+                <View style={[
+                  styles.statChip,
+                  { backgroundColor: group.totalRollcalls === 0 ? theme.absent : theme.present }
+                ]}>
+                  <MaterialCommunityIcons name="history" size={14} color={theme.primary} />
+                  <Text style={[styles.statValue, { color: theme.primary }]}>
+                    {group.totalRollcalls} Rollcalls
                   </Text>
                 </View>
               </View>
 
               <View style={styles.nameSection}>
-                <Text
-                  style={[styles.groupName, { color: theme.primary }]}
-                  numberOfLines={1}
-                >
+                <Text style={[styles.groupName, { color: theme.primary }]}>
                   {group.name}
                 </Text>
-                <View style={styles.memberCountRow}>
-                  <MaterialCommunityIcons name="account-multiple" size={16} color={theme.subText} />
-                  <Text style={[styles.memberCountText, { color: theme.subText }]}>
-                    {group.totalMembers} Members
-                  </Text>
+
+                <View style={styles.memberStackRow}>
+                  <MaterialCommunityIcons name="account-group" size={20} color={theme.subText} />
+                  <View style={styles.memberChip}>
+                    <Text style={styles.memberChipText}>
+                      {group.totalMembers} Members
+                    </Text>
+                  </View>
                 </View>
               </View>
 
               <View style={styles.cardFooter}>
-                <View style={[styles.statusBadge, { backgroundColor: theme.tonalLayerLow }]}>
+                <View style={styles.statusBadge}>
                   <View style={[
                     styles.statusDot,
                     { backgroundColor: group.isActive ? '#2e7d32' : theme.subText }
                   ]} />
                   <Text style={[styles.statusText, { color: theme.primary }]}>
-                    {group.isActive ? 'Active' : 'Inactive'}
+                    {group.isActive ? 'Live Session' : 'Standby'}
                   </Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={24} color={theme.primary} />
+                <MaterialCommunityIcons name="chevron-right" size={24} color={theme.subText} />
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
-        <RecentEntries limit={3} />
-
+        {/* Conditional History Section */}
+        {isReady && filteredGroups.length > 0 && (
+          <View style={styles.historySection}>
+            <RecentEntries limit={3} />
+          </View>
+        )}
       </ScrollView>
 
+      {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
         onPress={handleCreatePress}
@@ -214,14 +234,19 @@ export function GroupScreenComponent() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
     paddingBottom: 120,
+    backgroundColor: Palette.surfaceContainerLow,
   },
   listContainer: {
-    gap: Spacing.md,
+    gap: Spacing.md
+  },
+  historySection: {
+    marginTop: Spacing.xl
   },
   header: {
     flexDirection: 'row',
@@ -235,26 +260,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    flex: 1,
+    flex: 1
   },
   headerTitles: {
     justifyContent: 'center',
-    flex: 1,
+    flex: 1
   },
   ledgerLabel: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    letterSpacing: 1.5,
+    letterSpacing: 1.5
   },
   ledgerTitle: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 32,
-    marginTop: -2,
+    marginTop: -2
   },
   searchRow: {
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.sm
   },
   searchContainer: {
     flexDirection: 'row',
@@ -264,82 +289,80 @@ const styles = StyleSheet.create({
     height: 56,
   },
   searchIcon: {
-    marginRight: Spacing.sm,
+    marginRight: Spacing.sm
   },
   searchInput: {
     flex: 1,
     fontFamily: 'Inter-Medium',
-    fontSize: 15,
+    fontSize: 15
   },
   groupCard: {
+    backgroundColor: Palette.surfaceContainerLowest,
     borderRadius: Radius.xl,
     padding: Spacing.lg,
-    elevation: 2,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
+    marginBottom: Spacing.md,
+    borderLeftWidth: 6,
+    borderLeftColor: Palette.primary,
+    position: 'relative',
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: Palette.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
   },
-  cardTopRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
+    alignItems: 'flex-start',
+    marginBottom: Spacing.md
   },
   logoContainer: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     borderRadius: Radius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
+    backgroundColor: Palette.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   logoImage: {
     width: '100%',
-    height: '100%',
-  },
-  rollcallInfo: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  rollcallLabel: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  rollcallValue: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 16,
-    marginTop: 2,
+    height: '100%'
   },
   nameSection: {
-    marginBottom: Spacing.xl,
-  },
-  nameBlock: {
-    flex: 1,
-    marginRight: 12,
+    marginVertical: Spacing.lg
   },
   groupName: {
     fontFamily: 'Manrope-Bold',
     fontSize: 22,
-    lineHeight: 28,
+    lineHeight: 28
   },
-  memberCountRow: {
+  memberStackRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
+    justifyContent: 'flex-start',
+    gap: 8,
+    marginTop: Spacing.sm
   },
-  memberCountText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
+  memberChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 99,
+    backgroundColor: Palette.surface
+  },
+  memberChipText: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 12,
+    color: Palette.primary
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   statusBadge: {
     flexDirection: 'row',
@@ -348,16 +371,61 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 99,
     gap: 6,
+    backgroundColor: Palette.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(196, 198, 205, 0.15)',
   },
   statusDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 3
   },
   statusText: {
     fontFamily: 'Inter-Bold',
     fontSize: 11,
-    textTransform: 'uppercase',
+    textTransform: 'uppercase'
+  },
+  statChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  statValue: {
+    fontFamily: 'Manrope-ExtraBold',
+    fontSize: 14
+  },
+  cardWatermark: {
+    position: 'absolute',
+    right: -1,
+    top: '35%',
+    opacity: 0.04,
+    transform: [{ rotate: '-15deg' }],
+  },
+  emptyStateBlock: {
+    marginTop: 80,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  createPrompt: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 15,
+    marginBottom: 20
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    borderRadius: 99,
+    elevation: 4,
+  },
+  createButtonText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14
   },
   fab: {
     position: 'absolute',
@@ -369,32 +437,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.3,
     shadowRadius: 24,
-  },
-  emptyStateBlock: {
-    marginTop: 60,
-    alignItems: 'center',
-  },
-  createPrompt: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  createButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 99,
-  },
-  createButtonText: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 14,
   },
 });

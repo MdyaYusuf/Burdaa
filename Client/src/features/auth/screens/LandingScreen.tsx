@@ -1,33 +1,38 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '../../../core/constants/Theme';
 import { ExecutiveButton } from '../../../core/components/ExecutiveButton';
 import { useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
 const theme = Colors.light;
 
 export const LandingScreen = () => {
-  const router = useRouter(); 
-  
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Background Decoration: Subtle Tonal Shifts */}
       <View style={styles.decorationCircle} />
-      
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Brand Identity: Unifying with Login Design */}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Brand Header */}
         <View style={styles.brandHeader}>
           <View style={styles.logoBox}>
-            <MaterialIcons name="fact-check" size={32} color="#fff" />
+            <MaterialIcons name="fact-check" size={32} color={theme.cardBase} />
           </View>
           <Text style={styles.brandText}>Burdaa</Text>
         </View>
 
-        {/* Editorial Hero: High-Contrast Sizing */}
+        {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>ENTERPRISE GRADE</Text>
@@ -38,41 +43,93 @@ export const LandingScreen = () => {
           </Text>
         </View>
 
-        {/* Action Stack: Clear Transactional Paths */}
+        {/* Action Stack */}
         <View style={styles.ctaStack}>
-          <ExecutiveButton 
-            title="Register" 
-            onPress={() => router.push('/(auth)/register')} 
+          <ExecutiveButton
+            title="Register"
+            onPress={() => router.push('/(auth)/register')}
           />
           <View style={{ height: Spacing.sm }} />
-          <ExecutiveButton 
-            title="Login" 
-            variant="secondary" 
-            onPress={() => router.push('/(auth)/login')} 
+          <ExecutiveButton
+            title="Login"
+            variant="secondary"
+            onPress={() => router.push('/(auth)/login')}
           />
         </View>
 
-        {/* Feature Card: Tonal Layering */}
-        <View style={styles.featureCard}>
+        {/* Bento Section */}
+        <View style={styles.bentoSection}>
           <Text style={styles.featureLabel}>CORE CAPABILITY</Text>
-          <View style={styles.cardContent}>
-             <Text style={styles.cardTitle}>Fast Attendance</Text>
-             <Text style={styles.cardDesc}>
-               Swift-action marking system designed for large groups. Three taps for Present, Absent, or Late.
-             </Text>
-             
-             {/* Status Toggle: Boundaries via Color Shifts */}
-             <View style={styles.toggleRow}>
-               <View style={[styles.statusBox, { backgroundColor: theme.present }]}>
-                 <Text style={styles.statusText}>Present</Text>
-               </View>
-               <View style={[styles.statusBox, { backgroundColor: theme.late }]}>
-                 <Text style={styles.statusText}>Late</Text>
-               </View>
-               <View style={[styles.statusBox, { backgroundColor: theme.absent }]}>
-                 <Text style={styles.statusText}>Absent</Text>
-               </View>
-             </View>
+
+          <View style={styles.mainFeatureCard}>
+            <View style={styles.cardHeader}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons
+                  name="flash"
+                  size={28}
+                  color={theme.tint}
+                />
+              </View>
+              <View style={styles.highSpeedBadge}>
+                <Text style={styles.highSpeedText}>HIGH SPEED</Text>
+              </View>
+            </View>
+            <Text style={styles.cardTitle}>Fast Attendance</Text>
+            <Text style={styles.cardDesc}>
+              Swift-action marking system designed for large groups. Three taps for Present, Absent, or Late.
+            </Text>
+
+            <View style={styles.toggleRow}>
+              <View style={[styles.statusBox, { backgroundColor: theme.present }]}>
+                <MaterialCommunityIcons name="check-circle" size={20} color={theme.primary} />
+                <Text style={styles.statusText}>Present</Text>
+              </View>
+
+              <View style={[styles.statusBox, { backgroundColor: theme.late }]}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color={theme.primary} />
+                <Text style={styles.statusText}>Late</Text>
+              </View>
+
+              <View style={[styles.statusBox, { backgroundColor: theme.absent }]}>
+                <MaterialCommunityIcons name="cancel" size={20} color={theme.primary} />
+                <Text style={styles.statusText}>Absent</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.splitGrid}>
+            <View style={[styles.gridCard, { backgroundColor: theme.tonalLayerLow }]}>
+              <MaterialCommunityIcons name="domain" size={32} color={theme.primary} />
+              <View>
+                <Text style={styles.gridTitle}>Org Management</Text>
+                <Text style={styles.gridDesc}>Scale your hierarchy effortlessly.</Text>
+              </View>
+            </View>
+
+            <View style={[styles.gridCard, { backgroundColor: theme.surfaceContainerHigh }]}>
+              <MaterialCommunityIcons name="chart-timeline-variant" size={32} color={theme.primary} />
+              <View>
+                <Text style={styles.gridTitle}>Live Insights</Text>
+                <Text style={styles.gridDesc}>Real-time stats on your dashboard.</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Metrics Section */}
+        <View style={styles.metricsSection}>
+          <Text style={styles.hugeMetric}>99.9%</Text>
+          <Text style={styles.metricLabel}>UPTIME RELIABILITY</Text>
+
+          <View style={styles.metricGrid}>
+            <View style={styles.metricBox}>
+              <Text style={styles.metricValue}>1k+</Text>
+              <Text style={styles.metricSub}>Active Users</Text>
+            </View>
+            <View style={styles.metricBox}>
+              <Text style={styles.metricValue}>12ms</Text>
+              <Text style={styles.metricSub}>Sync Latency</Text>
+            </View>
           </View>
         </View>
 
@@ -82,9 +139,9 @@ export const LandingScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f8f9fc'
+  container: {
+    flex: 1,
+    backgroundColor: theme.background
   },
   decorationCircle: {
     position: 'absolute',
@@ -95,109 +152,201 @@ const styles = StyleSheet.create({
     borderRadius: 150,
     backgroundColor: 'rgba(4, 23, 44, 0.03)',
   },
-  scrollContent: { 
-    padding: Spacing.lg 
+  scrollContent: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xl * 2
   },
   brandHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: Spacing.xl,
+    gap: Spacing.sm + 4,
+    marginBottom: Spacing.xl
   },
   logoBox: {
-    backgroundColor: '#04172c',
-    padding: 8,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.primary,
+    padding: Spacing.sm,
+    borderRadius: Radius.lg
   },
   brandText: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 20,
-    color: '#04172c',
-    letterSpacing: -0.5,
+    color: theme.primary,
+    letterSpacing: -0.5
   },
   heroSection: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.md
   },
   badge: {
     backgroundColor: 'rgba(4, 23, 44, 0.05)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999, 
+    paddingHorizontal: Spacing.md - 4,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: 999,
     alignSelf: 'flex-start',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.md
   },
-  badgeText: { 
-    color: '#04172c', 
-    fontFamily: 'Inter-Bold', 
+  badgeText: {
+    color: theme.primary,
+    fontFamily: 'Inter-Bold',
     fontSize: 10,
-    letterSpacing: 1,
+    letterSpacing: 1
   },
   heroTitle: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 48,
-    color: '#04172c',
+    color: theme.primary,
     lineHeight: 56,
-    letterSpacing: -1.5,
+    letterSpacing: -1.5
   },
   subText: {
     fontFamily: 'Inter-Regular',
     fontSize: 17,
-    color: '#44474d',
+    color: theme.subText,
     marginTop: Spacing.md,
-    lineHeight: 26,
+    lineHeight: 26
   },
-  ctaStack: { 
-    marginTop: Spacing.xl, 
-    width: '100%' 
-  },
-  featureCard: {
+  ctaStack: {
     marginTop: Spacing.xl,
-    backgroundColor: '#ffffff',
+    width: '100%'
+  },
+  bentoSection: {
+    marginTop: Spacing.xl
+  },
+  featureLabel: {
+    color: theme.subText,
+    fontFamily: 'Inter-Bold',
+    fontSize: 11,
+    letterSpacing: 2,
+    marginBottom: Spacing.md
+  },
+  mainFeatureCard: {
+    backgroundColor: theme.cardBase,
     borderRadius: Radius.xl,
     padding: Spacing.lg,
-    shadowColor: '#04172c',
+    shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.06,
     shadowRadius: 24,
-    elevation: 4,
+    elevation: 4
   },
-  featureLabel: { 
-    color: '#74777d',
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md
+  },
+  iconContainer: {
+    backgroundColor: 'rgba(4, 23, 44, 0.05)',
+    padding: Spacing.sm + 2,
+    borderRadius: Radius.lg
+  },
+  highSpeedBadge: {
+    backgroundColor: 'rgba(4, 23, 44, 0.08)',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: 6
+  },
+  highSpeedText: {
     fontFamily: 'Inter-Bold',
-    fontSize: 11, 
-    letterSpacing: 2, 
-    marginBottom: Spacing.sm 
+    fontSize: 10,
+    color: theme.primary
   },
-  cardContent: {
-    marginTop: Spacing.sm,
+  cardTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 24,
+    color: theme.primary
   },
-  cardTitle: { 
-    fontFamily: 'Manrope-Bold', 
-    fontSize: 24, 
-    color: '#04172c' 
-  },
-  cardDesc: { 
+  cardDesc: {
     fontFamily: 'Inter-Regular',
-    color: '#44474d', 
-    fontSize: 14, 
+    color: theme.subText,
+    fontSize: 14,
     marginTop: 4,
-    lineHeight: 20,
+    lineHeight: 20
   },
-  toggleRow: { 
-    flexDirection: 'row', 
-    gap: 12, 
-    marginTop: Spacing.lg 
+  toggleRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg
   },
-  statusBox: { 
-    flex: 1, 
-    height: 60,
-    borderRadius: Radius.lg, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  statusBox: {
+    flex: 1,
+    height: 70,
+    borderRadius: Radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4
   },
-  statusText: { 
-    fontFamily: 'Inter-Bold', 
-    fontSize: 10, 
-    color: '#04172c' 
+  statusText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    color: theme.primary
   },
+  splitGrid: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.md
+  },
+  gridCard: {
+    flex: 1,
+    height: 180,
+    borderRadius: Radius.xl,
+    padding: Spacing.lg - 4,
+    justifyContent: 'space-between'
+  },
+  gridTitle: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 16,
+    color: theme.primary,
+    lineHeight: 20
+  },
+  gridDesc: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: theme.subText,
+    marginTop: 4
+  },
+  metricsSection: {
+    marginTop: Spacing.xl,
+    backgroundColor: theme.primaryContainer,
+    borderRadius: Radius.xl * 2,
+    paddingVertical: Spacing.xl + 16,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center'
+  },
+  hugeMetric: {
+    fontFamily: 'Manrope-ExtraBold',
+    fontSize: 72,
+    color: theme.onPrimary,
+    letterSpacing: -4
+  },
+  metricLabel: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 12,
+    color: theme.onPrimary,
+    letterSpacing: 2,
+    opacity: 0.8,
+    marginBottom: Spacing.xl
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    width: '100%'
+  },
+  metricBox: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: Radius.xl,
+    padding: Spacing.lg
+  },
+  metricValue: {
+    fontFamily: 'Manrope-Bold',
+    fontSize: 32,
+    color: theme.onPrimary
+  },
+  metricSub: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: theme.onPrimary,
+    opacity: 0.6,
+    marginTop: 4
+  }
 });

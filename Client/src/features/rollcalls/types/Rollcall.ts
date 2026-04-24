@@ -36,6 +36,7 @@ export interface CreateRollcallRequest {
   startTime?: string;
   endTime?: string;
   groupId: string;
+  organizationId: string;
   entries: CreateRollcallEntryDto[];
 }
 

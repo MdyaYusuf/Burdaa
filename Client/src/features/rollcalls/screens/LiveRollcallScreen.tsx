@@ -22,9 +22,9 @@ import { AttendanceStatus, RollcallEntryResponseDto } from '../types/Rollcall';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { Modal } from 'react-native';
+import { getProfileImageUri } from '@/src/core/utils/imageUtils';
 
 const LiveRollcallScreen = () => {
-  const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const router = useRouter();
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
@@ -76,7 +76,7 @@ const LiveRollcallScreen = () => {
           <View style={[styles.avatar, { backgroundColor: theme.tonalLayerLow }]}>
             {item.profileImageUrl ? (
               <Image
-                source={{ uri: `${IMAGE_BASE_URL}${item.profileImageUrl}` }}
+                source={{ uri: getProfileImageUri(item.profileImageUrl) || '' }}
                 style={[styles.avatarImage, isAbsent && { opacity: 0.3 }]}
               />
             ) : (
@@ -94,7 +94,7 @@ const LiveRollcallScreen = () => {
             >
               {item.memberFirstName} {item.memberLastName}
             </Text>
-            <Text style={[styles.memberIdText, { color: theme.subText }]} numberOfLines={1}>
+            <Text style={[styles.memberIdText, { color: theme.accent }]} numberOfLines={1}>
               {item.externalId || "ID NOT ASSIGNED"}
             </Text>
           </View>
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   memberIdText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-Bold',
     fontSize: 11,
     marginTop: 1,
     opacity: 0.6,

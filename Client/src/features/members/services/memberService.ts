@@ -2,12 +2,13 @@ import { apiClient } from '@/src/core/api/apiClient';
 import { ReturnModel, NoData } from '@/src/core/types/ApiResponse';
 import {
   MemberResponseDto,
-  CreatedMemberResponseDto
+  CreatedMemberResponseDto,
+  MemberStatsResponseDto
 } from '../types/Member';
 
 export const memberService = {
-  async getAll(): Promise<ReturnModel<MemberResponseDto[]>> {
-    return await apiClient.request<MemberResponseDto[]>('/members', {
+  async getAll(groupId: string): Promise<ReturnModel<MemberResponseDto[]>> {
+    return await apiClient.request<MemberResponseDto[]>(`/members?groupId=${groupId}`, {
       method: 'GET'
     });
   },
@@ -36,5 +37,11 @@ export const memberService = {
     return await apiClient.request<NoData>(`/members/${id}`, {
       method: 'DELETE',
     });
-  }
+  },
+
+  async getStatsById(id: string): Promise<ReturnModel<MemberStatsResponseDto>> {
+    return await apiClient.request<MemberStatsResponseDto>(`/members/${id}/stats`, {
+      method: 'GET'
+    });
+  },
 };

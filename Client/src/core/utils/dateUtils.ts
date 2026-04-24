@@ -26,5 +26,24 @@ export const formatDateTR = (dateString: string | null | undefined): string => {
     return '-';
   }
 
-  return new Date(dateString).toLocaleDateString('tr-TR');
+  const date = new Date(dateString);
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+
+  return `${d}/${m}/${y}`;
+};
+
+export const formatShortDateTR = (dateString: string | null | undefined): string => {
+
+  if (!dateString) {
+    return 'N/A';
+  }
+
+  const date = new Date(dateString);
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = String(date.getFullYear()).slice(-2);
+
+  return `${d}/${m}/${y}`;
 };

@@ -7,16 +7,20 @@ import {
 } from '../types/Group';
 
 export const groupService = {
-  getAll: async (): Promise<ReturnModel<GroupResponseDto[]>> => {
-    return await apiClient.request<GroupResponseDto[]>('/groups');
+  getAll: async (organizationId: string): Promise<ReturnModel<GroupResponseDto[]>> => {
+    return await apiClient.request<GroupResponseDto[]>(`/groups?organizationId=${organizationId}`, {
+      method: 'GET'
+    });
   },
 
   getById: async (id: string): Promise<ReturnModel<GroupResponseDto>> => {
-    return await apiClient.request<GroupResponseDto>(`/groups/${id}`);
+    return await apiClient.request<GroupResponseDto>(`/groups/${id}`, {
+      method: 'GET'
+    });
   },
 
-  create: async (data: CreateGroupRequest): Promise<ReturnModel<any>> => {
-    return await apiClient.request<any>('/groups', {
+  create: async (data: CreateGroupRequest): Promise<ReturnModel<GroupResponseDto>> => {
+    return await apiClient.request<GroupResponseDto>('/groups', {
       method: 'POST',
       body: JSON.stringify(data),
     });

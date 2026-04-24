@@ -4,68 +4,76 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   StatusBar,
   useColorScheme,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, Palette } from '@/src/core/constants/Theme';
 import { rollcallService } from '@/src/features/rollcalls/services/rollcallService';
-import { AttendanceStatus, RollcallResponseDto, RollcallEntryResponseDto } from '@/src/features/rollcalls/types/Rollcall';
+import { RollcallResponseDto } from '@/src/features/rollcalls/types/Rollcall';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
-import { router } from 'expo-router';
-
-const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+import { StatCard } from '@/src/features/rollcalls/components/StatCard';
+import { ReviewItem } from '@/src/features/rollcalls/components/ReviewItem';
 
 export default function RollcallDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [data, setData] = useState<RollcallResponseDto | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+  const [data, setData] = useState<RollcallResponseDto | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDetails = async () => {
+
+    if (id) {
+      setLoading(true);
+      const response = await rollcallService.getById(id);
+
+      if (response.success) {
+        setData(response.data);
+      }
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDetails = async () => {
-
-      if (id) {
-        setLoading(true);
-        const response = await rollcallService.getById(id);
-
-        if (response.success) {
-          setData(response.data);
-        }
-        setLoading(false);
-      }
-    };
     fetchDetails();
   }, [id]);
 
+  const formattedHeroDate = useMemo(() => {
+
+    if (!data?.date) {
+      return '-';
+    }
+
+    return new Date(data.date).toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }, [data?.date]);
+
+  // Summary Stats
   const stats = useMemo(() => {
 
     if (!data) {
       return { total: 0, present: 0, late: 0, absent: 0 };
     }
+
     const entries = data.entries;
+
     return {
       total: entries.length,
-      present: entries.filter((e) => e.status === AttendanceStatus.Present).length,
-      late: entries.filter((e) => e.status === AttendanceStatus.Late).length,
-      absent: entries.filter((e) => e.status === AttendanceStatus.Absent).length,
+      present: entries.filter((e) => e.status === 1).length,
+      late: entries.filter((e) => e.status === 2).length,
+      absent: entries.filter((e) => e.status === 3).length,
     };
   }, [data]);
-
-  if (loading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.loadingText, { color: theme.subText }]}>Retrieving Ledger Record...</Text>
-      </View>
-    );
-  }
 
   const formatTime = (time?: string) => {
 
@@ -75,6 +83,14 @@ export default function RollcallDetailScreen() {
     return time.length > 5 ? time.substring(0, 5) : time;
   };
 
+  if (loading && !data) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
   if (!data) {
     return null;
   }
@@ -83,7 +99,7 @@ export default function RollcallDetailScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      {/* Header Row */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeadingRow}>
           <View style={styles.headerLeading}>
@@ -91,7 +107,7 @@ export default function RollcallDetailScreen() {
             <View style={styles.headerTitles}>
               <Text style={[styles.ledgerLabel, { color: theme.subText }]}>LEDGER RECORD</Text>
               <Text style={[styles.ledgerTitle, { color: theme.primary }]} numberOfLines={1}>
-                {new Date(data.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Daily Rollcall
               </Text>
             </View>
           </View>
@@ -99,13 +115,18 @@ export default function RollcallDetailScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Session Metadata */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={fetchDetails} tintColor={theme.primary} />
+        }
+      >
+        {/* Hero Section */}
         <View style={styles.heroSection}>
-          <Text style={[styles.heroTitle, { color: theme.primary }]}>{data.title || "Standard Session"}</Text>
-          <Text style={[styles.groupSubtitle, { color: theme.subText }]}>
-            {data.groupName || "General Roster"}
-          </Text>
+          <Text style={[styles.heroTitle, { color: theme.primary }]}>{formattedHeroDate}</Text>
+          <Text style={[styles.groupSubtitle, { color: theme.subText }]}>{data.groupName || "General Roster"}</Text>
+
           <View style={styles.metaRow}>
             <View style={[styles.timeBadge, { backgroundColor: theme.tonalLayerLow }]}>
               <MaterialCommunityIcons name="clock-outline" size={14} color={theme.primary} />
@@ -123,69 +144,31 @@ export default function RollcallDetailScreen() {
           )}
         </View>
 
-        {/* Bento Grid Stats */}
+        {/* Metrics Grid */}
         <View style={styles.bentoRow}>
           <StatCard icon="account-group" label="Enrolled" value={stats.total} color={theme.tonalLayerLow} textColor={theme.primary} />
           <StatCard icon="check-circle" label="Present" value={stats.present} color={theme.present} textColor={theme.primary} />
           <StatCard icon="clock" label="Late" value={stats.late} color={theme.late} textColor={theme.accent} />
-          <StatCard icon="close-circle" label="Absent" value={stats.absent} color={theme.absent} textColor={Palette.onSurface} />
+          <StatCard icon="close-circle" label="Absent" value={stats.absent} color={theme.absent} textColor="#191c1e" />
         </View>
 
+        {/* Attendance List */}
         <View style={[styles.listContainer, { backgroundColor: theme.cardBase }]}>
           <Text style={[styles.listTitle, { color: theme.primary }]}>Attendance List</Text>
-          {data.entries.map((entry) => (
-            <ReviewItem key={entry.memberId} entry={entry} theme={theme} />
+          {data.entries.map((entry, index) => (
+            <ReviewItem
+              key={entry.memberId}
+              entry={entry}
+              theme={theme}
+              isLast={index === data.entries.length - 1}
+              onPress={() => router.push(`/members/${entry.memberId}` as any)}
+            />
           ))}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const StatCard = ({ icon, label, value, color, textColor }: any) => (
-  <View style={[styles.statCard, { backgroundColor: color }]}>
-    <MaterialCommunityIcons name={icon} size={24} color={textColor} />
-    <View>
-      <Text style={[styles.statValue, { color: textColor }]}>{value.toString().padStart(2, '0')}</Text>
-      <Text style={[styles.statLabel, { color: textColor }]}>{label}</Text>
-    </View>
-  </View>
-);
-
-const ReviewItem = ({ entry, theme }: { entry: RollcallEntryResponseDto; theme: any }) => {
-  const getStatusConfig = () => {
-    switch (entry.status) {
-      case AttendanceStatus.Present: return { label: 'PRESENT', color: theme.present };
-      case AttendanceStatus.Late: return { label: 'LATE', color: theme.late };
-      case AttendanceStatus.Absent: return { label: 'ABSENT', color: theme.absent };
-      default: return { label: 'NONE', color: theme.tonalLayerLow };
-    }
-  };
-  const config = getStatusConfig();
-
-  return (
-    <View style={styles.reviewItem}>
-      <View style={styles.memberInfo}>
-        <View style={[styles.avatar, { backgroundColor: theme.tonalLayerLow }]}>
-          {entry.profileImageUrl ? (
-            <Image source={{ uri: `${IMAGE_BASE_URL}${entry.profileImageUrl}` }} style={styles.avatarImage} />
-          ) : (
-            <Text style={[styles.avatarInitials, { color: theme.primary }]}>
-              {entry.memberFirstName?.[0]}{entry.memberLastName?.[0]}
-            </Text>
-          )}
-        </View>
-        <View>
-          <Text style={[styles.memberName, { color: theme.text }]}>{entry.memberFirstName} {entry.memberLastName}</Text>
-          <Text style={[styles.memberId, { color: theme.accent }]}>{entry.externalId || "NO ID"}</Text>
-        </View>
-      </View>
-      <View style={[styles.statusBadge, { backgroundColor: config.color }]}>
-        <Text style={[styles.statusBadgeText, { color: theme.text }]}>{config.label}</Text>
-      </View>
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -195,11 +178,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
@@ -240,7 +218,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: 'Manrope-Bold',
-    fontSize: 28,
+    fontSize: 32,
     letterSpacing: -1,
   },
   groupSubtitle: {
@@ -289,79 +267,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
     width: '100%',
   },
-  statCard: {
-    flex: 1,
-    aspectRatio: 0.85,
-    borderRadius: Radius.lg,
-    padding: 10,
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    fontFamily: 'Manrope',
-  },
-  statLabel: {
-    fontSize: 8,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    opacity: 0.7,
-  },
   listContainer: {
     borderRadius: Radius.xl,
     padding: 24,
   },
   listTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-ExtraBold',
     marginBottom: 16,
-  },
-  reviewItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  memberInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarInitials: {
-    fontFamily: 'Manrope-Bold',
-    fontSize: 14,
-  },
-  memberName: {
-    fontSize: 15,
-    fontWeight: '800',
-    fontFamily: 'Manrope',
-  },
-  memberId: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  statusBadgeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.5,
   },
 });

@@ -14,6 +14,11 @@ interface RollcallState {
   error: string | null;
 }
 
+interface FetchPreviewsParams {
+  organizationId: string;
+  count: number;
+}
+
 const initialState: RollcallState = {
   previews: [],
   activeRollcall: null,
@@ -21,10 +26,10 @@ const initialState: RollcallState = {
   error: null,
 };
 
-export const fetchRollcallPreviews = createAsyncThunk<RollcallPreviewDto[], void, { rejectValue: string }>(
+export const fetchRollcallPreviews = createAsyncThunk<RollcallPreviewDto[], FetchPreviewsParams, { rejectValue: string }>(
   'rollcalls/fetchPreviews',
-  async (_, { rejectWithValue }) => {
-    const response = await rollcallService.getPreviews();
+  async (params, { rejectWithValue }) => {
+    const response = await rollcallService.getPreviews(params.organizationId, params.count);
 
     if (response.success) {
       return response.data ?? [];
@@ -51,7 +56,10 @@ export const saveRollcallSession = createAsyncThunk<void, CreateRollcallRequest,
     const response = await rollcallService.create(data);
 
     if (response.success) {
-      dispatch(fetchRollcallPreviews());
+      dispatch(fetchRollcallPreviews({
+        organizationId: data.organizationId,
+        count: 5
+      }));
 
       return;
     }

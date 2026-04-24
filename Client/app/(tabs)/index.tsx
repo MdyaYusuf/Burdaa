@@ -7,41 +7,51 @@ import {
   Image,
   TouchableOpacity,
   RefreshControl,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
 import { Colors, Spacing, Radius } from '@/src/core/constants/Theme';
 import { useAppSelector, useAppDispatch } from '@/src/core/hooks/useRedux';
 import { ProfileButton } from '@/src/core/components/ProfileButton';
 import { ExecutiveBackButton } from '@/src/core/components/ExecutiveBackButton';
-import { router, useFocusEffect } from 'expo-router';
 import { fetchGroups } from '@/src/features/groups/store/groupSlice';
 import { fetchRollcallPreviews } from '@/src/features/rollcalls/store/rollcallSlice';
 import { RecentEntries } from '@/src/core/components/RecentEntries';
-
-const theme = Colors.light;
-const IMAGE_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+import { getProfileImageUri } from '@/src/core/utils/imageUtils';
 
 export default function DashboardScreen() {
   const dispatch = useAppDispatch();
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
   const { selectedOrganization } = useAppSelector((state) => state.organizations);
   const { groups, isLoading: groupsLoading } = useAppSelector((state) => state.groups);
   const { previews, isLoading: rollcallsLoading } = useAppSelector((state) => state.rollcalls);
 
+  const loadDashboardData = useCallback(() => {
+
+    if (selectedOrganization?.id) {
+      dispatch(fetchGroups(selectedOrganization.id));
+
+      dispatch(fetchRollcallPreviews({
+        organizationId: selectedOrganization.id,
+        count: 5
+      }));
+    }
+  }, [dispatch, selectedOrganization?.id]);
+
   useFocusEffect(
     useCallback(() => {
-      dispatch(fetchGroups());
-      dispatch(fetchRollcallPreviews());
-    }, [dispatch])
+      loadDashboardData();
+    }, [loadDashboardData])
   );
 
   const isLoading = groupsLoading || rollcallsLoading;
-
-  // Filter groups for the current organization
   const activeGroups = groups.filter(g => g.organizationId === selectedOrganization?.id);
 
-  // Calculate dynamic lifetime stats from previews
   const totalStats = useMemo(() => {
+
     return previews.reduce(
       (acc, curr) => ({
         present: acc.present + (curr.totalPresent || 0),
@@ -52,21 +62,17 @@ export default function DashboardScreen() {
     );
   }, [previews]);
 
-  const handleBackToOrganizations = () => {
-    router.push('/organizations' as any);
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Executive Header Row */}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Executive Header */}
       <View style={styles.header}>
         <View style={styles.headerLeading}>
-          <ExecutiveBackButton onPress={handleBackToOrganizations} />
+          <ExecutiveBackButton onPress={() => router.push('/organizations' as any)} />
           <View style={styles.headerTitles}>
-            <Text style={styles.label}>
+            <Text style={[styles.label, { color: theme.subText }]}>
               {selectedOrganization?.name.toUpperCase() || "TODAY'S LEDGER"}
             </Text>
-            <Text style={styles.heroTitle}>Overview</Text>
+            <Text style={[styles.heroTitle, { color: theme.primary }]}>Overview</Text>
           </View>
         </View>
         <ProfileButton />
@@ -78,49 +84,49 @@ export default function DashboardScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
-            onRefresh={() => {
-              dispatch(fetchGroups());
-              dispatch(fetchRollcallPreviews());
-            }}
+            onRefresh={loadDashboardData}
             tintColor={theme.primary}
           />
         }
       >
-        {/* Statistics Ledger */}
+        {/* Statistics Grid */}
         <View style={styles.statsGrid}>
-          <View style={[styles.statCard, styles.featuredCard]}>
+          <View style={[styles.statCard, styles.featuredCard, { backgroundColor: theme.primary }]}>
             <View style={styles.statHeader}>
               <View style={styles.iconBoxBlur}>
                 <MaterialCommunityIcons name="check-circle" size={20} color={theme.onPrimary} />
               </View>
               <Text style={styles.statLabelLight}>PRESENT</Text>
             </View>
-            <Text style={styles.statNumberLight}>{totalStats.present}</Text>
+
+            {/* 🟦 Fixed: Explicitly passing theme.onPrimary here */}
+            <Text style={[styles.statNumberLight, { color: theme.onPrimary }]}>
+              {totalStats.present}
+            </Text>
+
             <Text style={styles.statSubtextLight}>Lifetime attendance records</Text>
           </View>
 
           <View style={styles.statsRow}>
-            <View style={[styles.statCard, styles.secondaryCard]}>
+            <View style={[styles.statCard, styles.secondaryCard, { backgroundColor: theme.cardBase }]}>
               <View style={styles.statHeader}>
                 <View style={[styles.iconBox, { backgroundColor: theme.absent }]}>
                   <MaterialCommunityIcons name="close-circle" size={20} color="#ba1a1a" />
                 </View>
-                <Text style={styles.statLabel}>ABSENT</Text>
+                <Text style={[styles.statLabel, { color: theme.subText }]}>ABSENT</Text>
               </View>
-              <Text style={styles.statNumber}>{totalStats.absent}</Text>
-              <Text style={[styles.statSubtext, { color: '#ba1a1a' }]}>
-                Overall missing
-              </Text>
+              <Text style={[styles.statNumber, { color: theme.primary }]}>{totalStats.absent}</Text>
+              <Text style={[styles.statSubtext, { color: '#ba1a1a' }]}>Overall missing</Text>
             </View>
 
-            <View style={[styles.statCard, styles.secondaryCard]}>
+            <View style={[styles.statCard, styles.secondaryCard, { backgroundColor: theme.cardBase }]}>
               <View style={styles.statHeader}>
                 <View style={[styles.iconBox, { backgroundColor: theme.late }]}>
                   <MaterialCommunityIcons name="clock-outline" size={20} color="#ac8d64" />
                 </View>
-                <Text style={styles.statLabel}>LATE</Text>
+                <Text style={[styles.statLabel, { color: theme.subText }]}>LATE</Text>
               </View>
-              <Text style={styles.statNumber}>{totalStats.late}</Text>
+              <Text style={[styles.statNumber, { color: theme.primary }]}>{totalStats.late}</Text>
               <Text style={[styles.statSubtext, { color: '#ac8d64' }]}>Total delayed</Text>
             </View>
           </View>
@@ -128,9 +134,9 @@ export default function DashboardScreen() {
 
         {/* Dynamic Active Groups Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Active Groups</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Active Groups</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/groups')}>
-            <Text style={styles.seeAll}>See All →</Text>
+            <Text style={[styles.seeAll, { color: theme.primary }]}>See All →</Text>
           </TouchableOpacity>
         </View>
 
@@ -139,18 +145,18 @@ export default function DashboardScreen() {
             activeGroups.slice(0, 2).map((group) => (
               <TouchableOpacity
                 key={group.id}
-                style={styles.groupCard}
-                onPress={() => router.push(`/(tabs)/groups`)}
+                style={[styles.groupCard, { backgroundColor: theme.tonalLayerLow }]}
+                onPress={() => router.push(`/groups/${group.id}` as any)}
               >
                 <View style={styles.groupImageWrapper}>
                   {selectedOrganization?.logoUrl ? (
                     <Image
-                      source={{ uri: `${IMAGE_BASE_URL}${selectedOrganization.logoUrl}` }}
+                      source={{ uri: getProfileImageUri(selectedOrganization.logoUrl) || '' }}
                       style={styles.groupImage}
                       resizeMode="cover"
                     />
                   ) : (
-                    <View style={styles.groupImagePlaceholder}>
+                    <View style={[styles.groupImagePlaceholder, { backgroundColor: theme.cardBase, borderColor: theme.outline }]}>
                       <MaterialCommunityIcons
                         name={selectedOrganization?.name.toLowerCase().includes("academy") ? "school" : "office-building"}
                         size={40}
@@ -162,34 +168,50 @@ export default function DashboardScreen() {
                     <Text style={styles.badgeText}>{group.isActive ? 'ACTIVE' : 'INACTIVE'}</Text>
                   </View>
                 </View>
+
                 <View style={styles.groupInfo}>
-                  <Text style={styles.groupName} numberOfLines={1}>{group.name}</Text>
-                  <Text style={styles.groupDesc} numberOfLines={2}>
+                  <Text style={[styles.groupName, { color: theme.primary }]} numberOfLines={1}>{group.name}</Text>
+                  <Text style={[styles.groupDesc, { color: theme.subText }]} numberOfLines={2}>
                     {group.description || "No description provided for this roster."}
                   </Text>
                   <View style={styles.groupMeta}>
-                    <View style={styles.metaPill}>
+                    <View style={[styles.metaPill, { backgroundColor: theme.cardBase }]}>
                       <MaterialCommunityIcons name="account-group" size={14} color={theme.primary} />
-                      <Text style={styles.metaText}>{group.totalMembers} Members</Text>
+                      <Text style={[styles.metaText, { color: theme.primary }]}>{group.totalMembers} Members</Text>
                     </View>
                   </View>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
-            <View style={styles.emptyHintContainer}>
-              <Text style={styles.emptyHintText}>No active groups found.</Text>
+            <View style={[styles.emptyContainer, { borderColor: theme.outline }]}>
+              {/* 🟦 Darker icon color for better visibility */}
+              <MaterialCommunityIcons name="folder-open-outline" size={48} color={theme.subText} />
+
+              <Text style={[styles.emptyText, { color: theme.subText }]}>
+                No groups found for this organization.
+              </Text>
+
+              {/* 🟦 REPLACED: Underline link with a standard Executive Button */}
+              <TouchableOpacity
+                style={[styles.emptyButton, { backgroundColor: theme.primary }]}
+                onPress={() => router.push('/create-group' as any)}
+              >
+                <Text style={[styles.emptyButtonText, { color: theme.onPrimary }]}>
+                  Create Group
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
 
-        <RecentEntries />
+        <RecentEntries limit={5} />
 
       </ScrollView>
 
-      {/* Persistent Floating Action Button */}
+      {/* Floating Action Button */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
         onPress={() => router.push('/create-group' as any)}
       >
         <MaterialCommunityIcons name="plus" size={32} color={theme.onPrimary} />
@@ -201,7 +223,10 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.background,
+  },
+  scrollContent: {
+    padding: Spacing.lg,
+    paddingBottom: 120,
   },
   header: {
     flexDirection: 'row',
@@ -219,30 +244,27 @@ const styles = StyleSheet.create({
   headerTitles: {
     justifyContent: 'center',
   },
-  scrollContent: {
-    padding: Spacing.lg,
-    paddingBottom: 120,
-  },
   label: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    color: theme.subText,
     letterSpacing: 1.5,
   },
   heroTitle: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 32,
-    color: theme.primary,
     marginTop: -2,
   },
   statsGrid: {
     marginBottom: Spacing.xl,
   },
+  statCard: {
+    padding: Spacing.lg,
+    justifyContent: 'space-between',
+    borderRadius: Radius.xl,
+  },
   featuredCard: {
-    backgroundColor: theme.primary,
     marginBottom: Spacing.md,
     height: 160,
-    borderRadius: Radius.xl,
   },
   statsRow: {
     flexDirection: 'row',
@@ -250,13 +272,7 @@ const styles = StyleSheet.create({
   },
   secondaryCard: {
     flex: 1,
-    backgroundColor: theme.cardBase,
     height: 140,
-    borderRadius: Radius.xl,
-  },
-  statCard: {
-    padding: Spacing.lg,
-    justifyContent: 'space-between',
   },
   statHeader: {
     flexDirection: 'row',
@@ -275,7 +291,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontFamily: 'Inter-Bold',
     fontSize: 10,
-    color: theme.subText,
   },
   statLabelLight: {
     fontFamily: 'Inter-Bold',
@@ -285,12 +300,10 @@ const styles = StyleSheet.create({
   statNumber: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 36,
-    color: theme.primary,
   },
   statNumberLight: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 48,
-    color: theme.onPrimary,
   },
   statSubtext: {
     fontFamily: 'Inter-Medium',
@@ -311,18 +324,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: 'Manrope-Bold',
     fontSize: 22,
-    color: theme.primary,
   },
   seeAll: {
     fontFamily: 'Inter-Bold',
     fontSize: 13,
-    color: theme.primary,
   },
   dynamicListContainer: {
     gap: Spacing.md,
   },
   groupCard: {
-    backgroundColor: theme.tonalLayerLow,
     borderRadius: Radius.xl,
     padding: 8,
     flexDirection: 'row',
@@ -341,11 +351,9 @@ const styles = StyleSheet.create({
   groupImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: theme.cardBase,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.outline,
   },
   groupBadge: {
     position: 'absolute',
@@ -357,7 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   badgeText: {
-    color: theme.onPrimary,
+    color: '#FFF',
     fontSize: 8,
     fontFamily: 'Inter-Bold',
   },
@@ -368,12 +376,10 @@ const styles = StyleSheet.create({
   groupName: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 18,
-    color: theme.primary,
   },
   groupDesc: {
     fontFamily: 'Inter-Regular',
     fontSize: 13,
-    color: theme.subText,
     marginTop: 4,
   },
   groupMeta: {
@@ -383,7 +389,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: theme.cardBase,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -392,69 +397,42 @@ const styles = StyleSheet.create({
   metaText: {
     fontFamily: 'Inter-Bold',
     fontSize: 11,
-    color: theme.primary,
   },
-  ledgerCard: {
-    backgroundColor: theme.cardBase,
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xl,
     borderRadius: Radius.xl,
-    padding: Spacing.lg,
-    alignItems: 'center',
+    marginTop: Spacing.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
   },
-  comingSoonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 13,
-    color: theme.subText,
-    textAlign: 'center',
-  },
-  emptyHintContainer: {
-    padding: Spacing.xl,
-    alignItems: 'center',
-  },
-  emptyHintText: {
+  emptyText: {
     fontFamily: 'Inter-Medium',
     fontSize: 14,
-    color: theme.subText,
+    marginTop: 12,
+    textAlign: 'center',
   },
-  recentSessionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.cardBase,
-    padding: Spacing.md,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: theme.outline,
+  emptyButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 99,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  sessionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.tonalLayerLow,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  sessionDetails: {
-    flex: 1,
-  },
-  sessionTitleText: {
-    fontFamily: 'Manrope-Bold',
-    fontSize: 16,
-    color: theme.text,
-  },
-  sessionDateText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: theme.subText,
-  },
-  sessionMetrics: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 1,
-  },
-  sessionMetricText: {
+  emptyButtonText: {
     fontFamily: 'Inter-Bold',
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 13,
+  },
+  linkText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    marginTop: Spacing.md,
+    textDecorationLine: 'underline',
   },
   fab: {
     position: 'absolute',
@@ -463,11 +441,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: Radius.lg,
-    backgroundColor: theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

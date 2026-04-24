@@ -249,14 +249,18 @@ public class RollcallService(
   }
 
   public async Task<ReturnModel<List<RollcallPreviewDto>>> GetPreviewsAsync(
+    Guid organizationId,
     Guid currentUserId,
-    string userRole,
+    int count,
     CancellationToken cancellationToken = default)
   {
-    var rollcalls = await _rollcallRepository.GetAllAsync(
-      filter: userRole == "Admin" ? null : x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId,
+    var rollcalls = await _rollcallRepository.GetRecentByOrganizationAsync(
+      organizationId: organizationId,
+      count: count,
+      filter: x => x.Group.CreatorId == currentUserId || x.Group.Organization.OwnerId == currentUserId,
       include: q => q.Include(r => r.Group).Include(r => r.Entries),
       orderBy: q => q.OrderByDescending(r => r.Date),
+      enableTracking: false,
       cancellationToken: cancellationToken);
 
     var responseDtos = _mapper.EntityToPreviewDtoList(rollcalls);
@@ -272,10 +276,10 @@ public class RollcallService(
 
     return new ReturnModel<List<RollcallPreviewDto>>
     {
-      Success = true,
-      Message = "Yoklama özetleri başarıyla getirildi.",
       Data = responseDtos,
-      StatusCode = 200
+      Success = true,
+      StatusCode = 200,
+      Message = "Yoklama kayıt özetleri başarıyla getirildi."
     };
   }
 

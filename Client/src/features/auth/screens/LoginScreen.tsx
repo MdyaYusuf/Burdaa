@@ -148,26 +148,28 @@ export const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
-
-  backButtonContainer: {
-    position: 'absolute',
-    top: 60,
-    left: Spacing.lg,
-    zIndex: 10,
+  container: {
+    flex: 1,
+    backgroundColor: theme.background
   },
-
+  backButtonContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
   scrollContent: {
     padding: Spacing.lg,
-    paddingTop: 120 + Spacing.xl,
+    paddingTop: 0,
   },
-  header: { marginBottom: Spacing.xl },
+  header: {
+    marginBottom: Spacing.xl
+  },
   heroTitle: {
     fontFamily: 'Manrope-ExtraBold',
     fontSize: 40,
     color: theme.primary,
     lineHeight: 48,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.xl,
+    marginTop: Spacing.xl,
   },
   subText: {
     fontFamily: 'Inter-Regular',

@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Api.Core.Helpers;
 using Api.Core.Repositories;
 using Api.Core.Responses;
+using Api.Features.Rollcalls;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -207,6 +208,67 @@ public class MemberService(
     {
       Success = true,
       Message = "Üye başarılı bir şekilde silindi.",
+      StatusCode = 200
+    };
+  }
+
+  public async Task<ReturnModel<MemberStatsResponseDto>> GetStatsByIdAsync(
+    Guid id,
+    Guid currentUserId,
+    string userRole,
+    CancellationToken cancellationToken = default)
+  {
+    var member = await _businessRules.GetMemberIfExistAsync(
+      id,
+      include: q => q.Include(m => m.Group),
+      enableTracking: false,
+      cancellationToken: cancellationToken);
+
+    await _businessRules.UserMustHavePermissionToManageMember(
+      member.GroupId,
+      currentUserId,
+      userRole);
+
+    var stats = await _memberRepository.Query(enableTracking: false)
+      .Where(m => m.Id == id)
+      .Select(m => new
+      {
+        Total = m.RollcallEntries.Count(),
+        Present = m.RollcallEntries.Count(e => e.Status == AttendanceStatus.Present),
+        Late = m.RollcallEntries.Count(e => e.Status == AttendanceStatus.Late),
+        Absent = m.RollcallEntries.Count(e => e.Status == AttendanceStatus.Absent),
+        LastSeenDate = m.RollcallEntries
+          .OrderByDescending(e => e.CreatedDate)
+          .Select(e => (DateTime?)e.CreatedDate)
+          .FirstOrDefault()
+      })
+      .FirstOrDefaultAsync(cancellationToken);
+
+    if (stats == null)
+    {
+      return new ReturnModel<MemberStatsResponseDto>
+      {
+        Success = false,
+        Message = "İstatistik verilerine ulaşılamadı.",
+        StatusCode = 500
+      };
+    }
+
+    double attendanceRate = stats.Total == 0 ? 0 : Math.Round((double)stats.Present / stats.Total * 100, 1);
+
+    MemberStatsResponseDto response = new(
+      TotalSessions: stats.Total,
+      AttendanceRate: attendanceRate,
+      PresentCount: stats.Present,
+      LateCount: stats.Late,
+      AbsentCount: stats.Absent,
+      LastSeen: stats.LastSeenDate);
+
+    return new ReturnModel<MemberStatsResponseDto>
+    {
+      Success = true,
+      Data = response,
+      Message = "Üye istatistikleri başarıyla hesaplandı.",
       StatusCode = 200
     };
   }

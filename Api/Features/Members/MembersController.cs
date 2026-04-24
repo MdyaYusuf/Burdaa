@@ -67,4 +67,16 @@ public class MembersController(IMemberService _memberService) : CustomBaseContro
 
     return CreateActionResult(result);
   }
+
+  [HttpGet("{id:guid}/stats")]
+  public async Task<IActionResult> GetStats(Guid id, CancellationToken cancellationToken)
+  {
+    var result = await _memberService.GetStatsByIdAsync(
+      id: id,
+      currentUserId: GetUserId(),
+      userRole: GetUserRole(),
+      cancellationToken: cancellationToken);
+
+    return CreateActionResult(result);
+  }
 }
